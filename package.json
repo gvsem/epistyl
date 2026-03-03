@@ -1,0 +1,33 @@
+{
+  "name": "@gvsem/epistyl",
+  "version": "0.0.0",
+  "description": "Minimal TypeScript library skeleton for epistyl (playground included)",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
+    "playground:build": "tsc -p tsconfig.json",
+    "playground:run": "npm run playground:build && node dist/playground/index.js",
+    "dev": "tsc -w -p tsconfig.json",
+    "start": "vite playground --open",
+    "dev:web": "vite playground",
+    "build:web": "vite build --outDir dist/playground --root playground"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "vitest": "^4.0.15"
+  }
+}
