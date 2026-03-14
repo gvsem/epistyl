@@ -1,5 +1,5 @@
 import type {Action} from "./action";
-import {type ClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../core/clock";
+import {ClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
 
 export type ObjectId = string;
 export type TxId = string;
@@ -7,7 +7,7 @@ export type OpId = string;
 
 export interface Operation {
     /**
-     * Globally unique operation identifier.
+     * Globally unique operation identifier. (Replica Id + Operation counter). A:1. Replica A; Counter 1
      */
     opId: OpId;
 
@@ -35,19 +35,6 @@ export interface Operation {
      * Serialized domain action.
      */
     action: Action;
-
-    /**
-     * Optional wall-clock timestamp for diagnostics only.
-     */
-    timestamp?: string;
-}
-
-export function isSameOperation(a: Operation, b: Operation): boolean {
-    return a.opId === b.opId;
-}
-
-export function getOperationKey(operation: Operation): string {
-    return operation.opId;
 }
 
 function parseOperationCounter(opId: OpId): number | null {
@@ -66,17 +53,18 @@ export function compareOperations(a: Operation, b: Operation): number {
         return 0;
     }
 
-    const causal = compareOperationCausality(a, b);
+    const causal = compareClocks(a.clock, b.clock);
 
-    if (causal === "before") {
+    if (causal === ClockRelation.BEFORE) {
         return -1;
     }
 
-    if (causal === "after") {
+    if (causal === ClockRelation.AFTER) {
         return 1;
     }
 
     if (a.replicaId !== b.replicaId) {
+        // детерминированно выводим на основе лексикографического сравнения по replicaId
         return a.replicaId < b.replicaId ? -1 : 1;
     }
 
@@ -88,13 +76,6 @@ export function compareOperations(a: Operation, b: Operation): number {
     }
 
     return a.opId < b.opId ? -1 : 1;
-}
-
-export function compareOperationCausality(
-    a: Operation,
-    b: Operation,
-): ClockRelation {
-    return compareClocks(a.clock, b.clock);
 }
 
 export function sortOperations(

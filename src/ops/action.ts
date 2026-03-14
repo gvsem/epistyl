@@ -1,5 +1,12 @@
+import {LeafValue} from "../runtime/leafUtils";
+
 export type PathSegment = string | number;
 export type ObjectPath = PathSegment[];
+
+export type ContainerNodeKind =
+    | "object"
+    | "set"
+    | "array";
 
 export type PrimitiveValue =
     | string
@@ -12,8 +19,6 @@ export interface RefValue {
     objectId: string | null;
 }
 
-export type LeafValue = PrimitiveValue | RefValue;
-
 export interface SetFieldAction {
     type: "field.set";
     path: ObjectPath;
@@ -23,26 +28,6 @@ export interface SetFieldAction {
 export interface DeleteFieldAction {
     type: "field.delete";
     path: ObjectPath;
-}
-
-export interface MapSetValueAction {
-    type: "map.setValue";
-    path: ObjectPath;
-    key: string;
-    value: LeafValue;
-}
-
-export interface MapInitEntryAction {
-    type: "map.initEntry";
-    path: ObjectPath;
-    key: string;
-    nodeKind: "object" | "map" | "set" | "array";
-}
-
-export interface MapDeleteAction {
-    type: "map.delete";
-    path: ObjectPath;
-    key: string;
 }
 
 export interface SetAddAction {
@@ -75,11 +60,6 @@ export interface InitObjectAction {
     path: ObjectPath;
 }
 
-export interface InitMapAction {
-    type: "node.initMap";
-    path: ObjectPath;
-}
-
 export interface InitSetAction {
     type: "node.initSet";
     path: ObjectPath;
@@ -93,14 +73,10 @@ export interface InitArrayAction {
 export type Action =
     | SetFieldAction
     | DeleteFieldAction
-    | MapSetValueAction
-    | MapInitEntryAction
-    | MapDeleteAction
     | SetAddAction
     | SetRemoveAction
     | ArrayInsertAction
     | ArrayRemoveAction
     | InitObjectAction
-    | InitMapAction
     | InitSetAction
     | InitArrayAction;

@@ -1,47 +1,18 @@
 import { describe, it, expect } from "vitest";
 
 import {
-    cloneClock,
     compareClocks,
     createClockState,
-    emptyClock,
     getClockValue,
     issueClock,
     mergeClocks,
     observeClock,
     setClockValue,
-    tickClock,
     type ClockState,
-    type VectorClock,
-} from "../../src/core/clock";
+    type VectorClock, ClockRelation,
+} from "../../src/clock/clock";
 
-describe("core/clock", () => {
-    describe("emptyClock", () => {
-        it("returns an empty vector clock", () => {
-            expect(emptyClock()).toEqual({});
-        });
-    });
-
-    describe("cloneClock", () => {
-        it("returns a shallow copy with the same values", () => {
-            const original: VectorClock = { A: 1, B: 2 };
-
-            const cloned = cloneClock(original);
-
-            expect(cloned).toEqual({ A: 1, B: 2 });
-            expect(cloned).not.toBe(original);
-        });
-
-        it("does not mutate when the clone is changed", () => {
-            const original: VectorClock = { A: 1 };
-            const cloned = cloneClock(original);
-
-            cloned.A = 10;
-
-            expect(original).toEqual({ A: 1 });
-            expect(cloned).toEqual({ A: 10 });
-        });
-    });
+describe("clock/clock", () => {
 
     describe("getClockValue", () => {
         it("returns stored value for known replica", () => {
@@ -77,25 +48,6 @@ describe("core/clock", () => {
         });
     });
 
-    describe("tickClock", () => {
-        it("increments existing replica value", () => {
-            const clock: VectorClock = { A: 2, B: 4 };
-
-            const next = tickClock(clock, "A");
-
-            expect(next).toEqual({ A: 3, B: 4 });
-            expect(clock).toEqual({ A: 2, B: 4 });
-        });
-
-        it("starts missing replica value from 1", () => {
-            const clock: VectorClock = { A: 2 };
-
-            const next = tickClock(clock, "B");
-
-            expect(next).toEqual({ A: 2, B: 1 });
-        });
-    });
-
     describe("mergeClocks", () => {
         it("takes element-wise maximum for all replicas", () => {
             const a: VectorClock = { A: 1, B: 5 };
@@ -124,29 +76,29 @@ describe("core/clock", () => {
 
     describe("compareClocks", () => {
         it("returns equal for identical clocks", () => {
-            expect(compareClocks({ A: 1, B: 2 }, { A: 1, B: 2 })).toBe("equal");
+            expect(compareClocks({ A: 1, B: 2 }, { A: 1, B: 2 })).toBe(ClockRelation.EQUAL);
         });
 
         it("returns equal when missing replicas are equivalent to zero", () => {
-            expect(compareClocks({}, { A: 0 })).toBe("equal");
-            expect(compareClocks({ A: 1 }, { A: 1, B: 0 })).toBe("equal");
+            expect(compareClocks({}, { A: 0 })).toBe(ClockRelation.EQUAL);
+            expect(compareClocks({ A: 1 }, { A: 1, B: 0 })).toBe(ClockRelation.EQUAL);
         });
 
         it("returns before when left is causally earlier", () => {
-            expect(compareClocks({ A: 1 }, { A: 2 })).toBe("before");
-            expect(compareClocks({ A: 1, B: 2 }, { A: 1, B: 3 })).toBe("before");
-            expect(compareClocks({ A: 1 }, { A: 1, B: 1 })).toBe("before");
+            expect(compareClocks({ A: 1 }, { A: 2 })).toBe(ClockRelation.BEFORE);
+            expect(compareClocks({ A: 1, B: 2 }, { A: 1, B: 3 })).toBe(ClockRelation.BEFORE);
+            expect(compareClocks({ A: 1 }, { A: 1, B: 1 })).toBe(ClockRelation.BEFORE);
         });
 
         it("returns after when left is causally later", () => {
-            expect(compareClocks({ A: 3 }, { A: 2 })).toBe("after");
-            expect(compareClocks({ A: 1, B: 4 }, { A: 1, B: 3 })).toBe("after");
-            expect(compareClocks({ A: 1, B: 1 }, { A: 1 })).toBe("after");
+            expect(compareClocks({ A: 3 }, { A: 2 })).toBe(ClockRelation.AFTER);
+            expect(compareClocks({ A: 1, B: 4 }, { A: 1, B: 3 })).toBe(ClockRelation.AFTER);
+            expect(compareClocks({ A: 1, B: 1 }, { A: 1 })).toBe(ClockRelation.AFTER);
         });
 
         it("returns concurrent when clocks are incomparable", () => {
-            expect(compareClocks({ A: 2, B: 1 }, { A: 1, B: 2 })).toBe("concurrent");
-            expect(compareClocks({ A: 3, C: 1 }, { A: 2, B: 5 })).toBe("concurrent");
+            expect(compareClocks({ A: 2, B: 1 }, { A: 1, B: 2 })).toBe(ClockRelation.CONCURRENT);
+            expect(compareClocks({ A: 3, C: 1 }, { A: 2, B: 5 })).toBe(ClockRelation.CONCURRENT);
         });
     });
 
@@ -170,8 +122,8 @@ describe("core/clock", () => {
 
             const issued = issueClock(state);
 
-            expect(issued.counter).toBe(3);
-            expect(issued.clock).toEqual({ A: 3, B: 5 });
+            expect(issued.state.counter).toBe(3);
+            expect(issued.state.clock).toEqual({ A: 3, B: 5 });
             expect(issued.state).toEqual({
                 replicaId: "A",
                 clock: { A: 3, B: 5 },
@@ -195,7 +147,7 @@ describe("core/clock", () => {
             });
 
             expect(issued.state).not.toBe(state);
-            expect(issued.clock).not.toBe(state.clock);
+            expect(issued.state.clock).not.toBe(state.clock);
         });
 
         it("starts local component from 1 when missing", () => {
@@ -207,8 +159,8 @@ describe("core/clock", () => {
 
             const issued = issueClock(state);
 
-            expect(issued.clock).toEqual({ A: 1, B: 4 });
-            expect(issued.counter).toBe(1);
+            expect(issued.state.clock).toEqual({ A: 1, B: 4 });
+            expect(issued.state.counter).toBe(1);
         });
     });
 

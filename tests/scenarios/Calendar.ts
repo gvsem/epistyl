@@ -1,7 +1,6 @@
 import {ApplyContext} from "../../src/runtime/apply";
 import {
     createArrayNodeState,
-    createMapNodeState,
     createObjectNodeState,
     createPrimitiveNodeState,
     createRefNodeState,
@@ -26,70 +25,70 @@ export interface CalendarHarnessOptions {
 
 export function createCalendarInitialRoot(): NodeState {
     const locationNode = createObjectNodeState();
-    locationNode.state.fields["room"] = {
+    locationNode.state.items["room"] = {
         node: createPrimitiveNodeState("lww"),
-        slotVersion: null,
+        version: null,
     };
-    locationNode.state.fields["building"] = {
+    locationNode.state.items["building"] = {
         node: createPrimitiveNodeState("lww"),
-        slotVersion: null,
+        version: null,
     };
 
-    const metadataNode = createMapNodeState();
-    metadataNode.state.entries["color"] = {
+    const metadataNode = createObjectNodeState();
+    metadataNode.state.items["color"] = {
         node: createPrimitiveNodeState("lww"),
-        entryVersion: null,
+        version: null,
     };
-    metadataNode.state.entries["note"] = {
+    metadataNode.state.items["note"] = {
         node: createPrimitiveNodeState("mv"),
-        entryVersion: null,
+        version: null,
     };
 
     const root = createObjectNodeState();
 
-    root.state.fields["title"] = {
+    root.state.items["title"] = {
         node: createPrimitiveNodeState("mv"),
-        slotVersion: null,
+        version: null,
     };
 
-    root.state.fields["description"] = {
+    root.state.items["description"] = {
         node: createPrimitiveNodeState("lww"),
-        slotVersion: null,
+        version: null,
     };
 
-    root.state.fields["startAt"] = {
+    root.state.items["startAt"] = {
         node: createPrimitiveNodeState("lww"),
-        slotVersion: null,
+        version: null,
     };
 
-    root.state.fields["endAt"] = {
+    root.state.items["endAt"] = {
         node: createPrimitiveNodeState("lww"),
-        slotVersion: null,
+        version: null,
     };
 
-    root.state.fields["organizer"] = {
+    root.state.items["organizer"] = {
         node: createRefNodeState("lww"),
-        slotVersion: null,
+        version: null,
     };
 
-    root.state.fields["location"] = {
+    root.state.items["location"] = {
         node: locationNode,
-        slotVersion: null,
+        version: null,
     };
 
-    root.state.fields["tags"] = {
+    root.state.items["tags"] = {
         node: createSetNodeState(),
-        slotVersion: null,
+        version: null,
     };
 
-    root.state.fields["attendees"] = {
+    root.state.items["attendees"] = {
         node: createArrayNodeState(),
-        slotVersion: null,
+        version: null,
     };
 
-    root.state.fields["metadata"] = {
+    root.state.items["metadata"] = {
         node: metadataNode,
-        slotVersion: null,
+        version: null,
     };
 
     return root;
@@ -278,9 +277,13 @@ export class CalendarEventHarness {
 
     setColor(value: string): this {
         this.replicaState = applyLocalAction(this.replicaState, this.objectId, {
-            type: "map.setValue",
+            type: "node.initObject",
             path: ["metadata"],
-            key: "color",
+        });
+
+        this.replicaState = applyLocalAction(this.replicaState, this.objectId, {
+            type: "field.set",
+            path: ["metadata", "color"],
             value,
         });
         return this;
@@ -288,9 +291,13 @@ export class CalendarEventHarness {
 
     setNote(value: string): this {
         this.replicaState = applyLocalAction(this.replicaState, this.objectId, {
-            type: "map.setValue",
+            type: "node.initObject",
             path: ["metadata"],
-            key: "note",
+        });
+
+        this.replicaState = applyLocalAction(this.replicaState, this.objectId, {
+            type: "field.set",
+            path: ["metadata", "note"],
             value,
         });
         return this;

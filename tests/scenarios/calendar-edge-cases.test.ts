@@ -293,7 +293,11 @@ describe("scenarios/calendar/edge-cases", () => {
 
         follower.mergeFrom(source, "B");
 
-        expect(follower.view()).toEqual({
+        const view = follower.view() as Record<string, any>
+        expect({
+            ...view,
+            tags: [...view.tags].sort()
+        }).toEqual({
             attendees: [{ type: "ref", objectId: "user-2" }],
             description: "Weekly planning",
             endAt: "2026-03-07T11:00:00Z",
@@ -349,7 +353,7 @@ describe("scenarios/calendar/edge-cases", () => {
             .mergeFrom(source, "M")
             .mergeFrom(source, "M");
 
-        expect(merged.getTags()).toEqual(["team", "urgent"]);
+        expect(merged.getTags().sort()).toEqual(["team", "urgent"]);
         expect(merged.getAttendees()).toEqual([
             { type: "ref", objectId: "user-2" },
             { type: "ref", objectId: "user-3" },
@@ -387,7 +391,13 @@ describe("scenarios/calendar/edge-cases", () => {
             .mergeFrom(c, "M")
             .mergeFrom(d, "M");
 
-        expect(merged.view()).toEqual({
+
+        const view = merged.view() as Record<string, any>
+
+        expect({
+            ...view,
+            tags: [...view.tags].sort()
+        }).toEqual({
             attendees: [
                 { type: "ref", objectId: "user-2" },
                 { type: "ref", objectId: "user-8" },

@@ -1,10 +1,8 @@
-import type {ReplicaId, VectorClock} from "../core/clock";
+import type {ReplicaId, VectorClock} from "../clock/clock";
 import type {OpId} from "../ops/operation";
 
 export interface SetValueAdapter<T> {
     equals(left: T, right: T): boolean;
-
-    compare?(left: T, right: T): number;
 }
 
 export interface SetAddVersion<T> {
@@ -12,7 +10,6 @@ export interface SetAddVersion<T> {
     tag: OpId;
     replicaId: ReplicaId;
     clock: VectorClock;
-    timestamp?: string;
 }
 
 export interface SetRemoveInput<T> {
@@ -20,7 +17,6 @@ export interface SetRemoveInput<T> {
     opId: OpId;
     replicaId: ReplicaId;
     clock: VectorClock;
-    timestamp?: string;
 }
 
 export interface SetRemoveVersion<T> {
@@ -29,7 +25,6 @@ export interface SetRemoveVersion<T> {
     replicaId: ReplicaId;
     clock: VectorClock;
     removedTags: OpId[];
-    timestamp?: string;
 }
 
 export interface SetValueView<T> {
@@ -149,23 +144,12 @@ export function removeSetValue<T>(
         opId: input.opId,
         replicaId: input.replicaId,
         clock: {...input.clock},
-        removedTags,
-        timestamp: input.timestamp,
+        removedTags
     };
 
     return {
         adds: state.adds,
         removes: deduplicateSetRemoves([...state.removes, removeRecord]),
-    };
-}
-
-export function mergeSetStates<T>(
-    left: SetState<T>,
-    right: SetState<T>,
-): SetState<T> {
-    return {
-        adds: deduplicateSetAdds([...left.adds, ...right.adds]),
-        removes: deduplicateSetRemoves([...left.removes, ...right.removes]),
     };
 }
 
@@ -234,12 +218,8 @@ export function getPresentSetValues<T>(
 
         views.push({
             value: add.value,
-            liveTags: liveAdds.map((item) => item.tag).sort(),
+            liveTags: liveAdds.map((item) => item.tag),
         });
-    }
-
-    if (adapter.compare) {
-        views.sort((a, b) => adapter.compare!(a.value, b.value));
     }
 
     return views;

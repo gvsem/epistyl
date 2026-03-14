@@ -15,7 +15,6 @@ import {
     insertArrayElement,
     isArrayElementVisible,
     mergeArrayElementStates,
-    mergeArrayStates,
 } from "../../src/crdt/array";
 
 type TestNode = {
@@ -310,37 +309,6 @@ describe("crdt/array", () => {
             );
 
             expect(next).toEqual(state);
-        });
-    });
-
-    describe("mergeArrayStates", () => {
-        it("unions and merges element states by id", () => {
-            const left: ArrayState<TestNode> = {
-                elements: {
-                    e1: element("e1", null, "A", version("A:1", "A", {A: 1})),
-                },
-            };
-
-            const right: ArrayState<TestNode> = {
-                elements: {
-                    e1: element("e1", null, "B", version("B:1", "B", {B: 1})),
-                    e2: element("e2", "e1", "C", version("B:2", "B", {B: 2})),
-                },
-            };
-
-            const merged = mergeArrayStates(left, right, adapter);
-
-            expect(merged.elements.e1).toEqual({
-                elementId: "e1",
-                afterElementId: null,
-                node: {value: "A|B"},
-                insertVersion: version("B:1", "B", {B: 1}),
-                deleteVersion: null,
-            });
-
-            expect(merged.elements.e2).toEqual(
-                element("e2", "e1", "C", version("B:2", "B", {B: 2})),
-            );
         });
     });
 

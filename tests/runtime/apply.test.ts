@@ -8,18 +8,13 @@ import {
     type ApplyContext,
     type ApplyMetadata,
     applyOperationToRoot,
-    createArrayElementVersionFromMetadata,
-    createLeafNodeFromValue,
-    createMapEntryVersionFromMetadata,
-    createObjectSlotVersionFromMetadata,
     createRegisterVersionFromMetadata,
-    isRefValue,
+    createVersionStampFromMetadata,
 } from "../../src/runtime/apply";
 
 import {
     createObjectNodeState,
     isArrayNodeState,
-    isMapNodeState,
     isObjectNodeState,
     isPrimitiveNodeState,
     isRefNodeState,
@@ -28,10 +23,10 @@ import {
 } from "../../src/crdt/state";
 
 import {getObjectField} from "../../src/crdt/object";
-import {getMapEntry} from "../../src/crdt/map";
 import {getPresentSetValues} from "../../src/crdt/set";
 import {getVisibleArrayElements} from "../../src/crdt/array";
 import {getRegisterView} from "../../src/crdt/register";
+import {createLeafNodeFromValue, isRefValue} from "../../src/runtime/leafUtils";
 
 const context: ApplyContext = {
     policy: {
@@ -112,62 +107,54 @@ describe("runtime/apply", () => {
                     opId: "A:1",
                     replicaId: "A",
                     clock: {A: 1},
-                    timestamp: "ts",
                 }),
             ).toEqual({
                 value: "hello",
                 opId: "A:1",
                 replicaId: "A",
                 clock: {A: 1},
-                timestamp: "ts",
             });
         });
 
         it("createObjectSlotVersionFromMetadata copies metadata", () => {
             expect(
-                createObjectSlotVersionFromMetadata({
+                createVersionStampFromMetadata({
                     opId: "A:1",
                     replicaId: "A",
                     clock: {A: 1},
-                    timestamp: "ts",
                 }),
             ).toEqual({
                 opId: "A:1",
                 replicaId: "A",
                 clock: {A: 1},
-                timestamp: "ts",
             });
         });
 
         it("createMapEntryVersionFromMetadata copies metadata", () => {
             expect(
-                createMapEntryVersionFromMetadata({
+                createVersionStampFromMetadata({
                     opId: "A:1",
                     replicaId: "A",
                     clock: {A: 1},
-                    timestamp: "ts",
                 }),
             ).toEqual({
                 opId: "A:1",
                 replicaId: "A",
                 clock: {A: 1},
-                timestamp: "ts",
             });
         });
 
         it("createArrayElementVersionFromMetadata copies metadata", () => {
             expect(
-                createArrayElementVersionFromMetadata({
+                createVersionStampFromMetadata({
                     opId: "A:1",
                     replicaId: "A",
                     clock: {A: 1},
-                    timestamp: "ts",
                 }),
             ).toEqual({
                 opId: "A:1",
                 replicaId: "A",
                 clock: {A: 1},
-                timestamp: "ts",
             });
         });
     });
@@ -232,7 +219,7 @@ describe("runtime/apply", () => {
             }
 
             const slot = getObjectField(next.state, "title");
-            expect(slot?.slotVersion).toEqual({
+            expect(slot?.version).toEqual({
                 opId: "A:1",
                 replicaId: "A",
                 clock: {A: 1},
@@ -408,7 +395,7 @@ describe("runtime/apply", () => {
 
             expect(getObjectField(next.state, "title")).toEqual({
                 node: null,
-                slotVersion: {
+                version: {
                     opId: "A:2",
                     replicaId: "A",
                     clock: {A: 2},
@@ -434,27 +421,8 @@ describe("runtime/apply", () => {
             }
 
             const slot = getObjectField(next.state, "location");
-            expect(slot?.slotVersion?.opId).toBe("A:1");
+            expect(slot?.version?.opId).toBe("A:1");
             expect(isObjectNodeState(slot?.node as NodeState)).toBe(true);
-        });
-
-        it("initializes map node", () => {
-            const root = createObjectNodeState();
-
-            const next = applyActionToRoot(
-                root,
-                {type: "node.initMap", path: ["metadata"]},
-                metadata("A:1", "A", {A: 1}),
-                context,
-            );
-
-            if (!isObjectNodeState(next)) {
-                throw new Error("Expected object root");
-            }
-
-            expect(isMapNodeState(getObjectField(next.state, "metadata")?.node as NodeState)).toBe(
-                true,
-            );
         });
 
         it("initializes set node", () => {
@@ -493,166 +461,6 @@ describe("runtime/apply", () => {
             expect(
                 isArrayNodeState(getObjectField(next.state, "attendees")?.node as NodeState),
             ).toBe(true);
-        });
-    });
-
-    describe("map.*", () => {
-        it("map.setValue writes primitive entry into map", () => {
-            let root: NodeState = createObjectNodeState();
-
-            root = applyActionToRoot(
-                root,
-                {type: "node.initMap", path: ["metadata"]},
-                metadata("A:1", "A", {A: 1}),
-                context,
-            );
-
-            const next = applyActionToRoot(
-                root,
-                {
-                    type: "map.setValue",
-                    path: ["metadata"],
-                    key: "color",
-                    value: "blue",
-                },
-                metadata("A:2", "A", {A: 2}),
-                context,
-            );
-
-            if (!isObjectNodeState(next)) {
-                throw new Error("Expected object root");
-            }
-
-            const mapNode = getObjectField(next.state, "metadata")?.node;
-            if (!mapNode || !isMapNodeState(mapNode)) {
-                throw new Error("Expected map node");
-            }
-
-            const entry = getMapEntry(mapNode.state, "color");
-            expect(entry?.entryVersion?.opId).toBe("A:2");
-
-            if (!entry?.node || !isPrimitiveNodeState(entry.node)) {
-                throw new Error("Expected primitive map child");
-            }
-
-            expect(getRegisterView(entry.node.state)).toEqual({
-                semantics: "mv",
-                values: [
-                    {
-                        value: "blue",
-                        opId: "A:2",
-                        replicaId: "A",
-                        clock: {A: 2},
-                    },
-                ],
-            });
-        });
-
-        it("map.initEntry creates container entry", () => {
-            let root: NodeState = createObjectNodeState();
-
-            root = applyActionToRoot(
-                root,
-                {type: "node.initMap", path: ["metadata"]},
-                metadata("A:1", "A", {A: 1}),
-                context,
-            );
-
-            const next = applyActionToRoot(
-                root,
-                {
-                    type: "map.initEntry",
-                    path: ["metadata"],
-                    key: "nested",
-                    nodeKind: "object",
-                },
-                metadata("A:2", "A", {A: 2}),
-                context,
-            );
-
-            if (!isObjectNodeState(next)) {
-                throw new Error("Expected object root");
-            }
-
-            const mapNode = getObjectField(next.state, "metadata")?.node;
-            if (!mapNode || !isMapNodeState(mapNode)) {
-                throw new Error("Expected map node");
-            }
-
-            expect(isObjectNodeState(getMapEntry(mapNode.state, "nested")?.node as NodeState)).toBe(
-                true,
-            );
-        });
-
-        it("map.delete tombstones entry", () => {
-            let root: NodeState = createObjectNodeState();
-
-            root = applyActionToRoot(
-                root,
-                {type: "node.initMap", path: ["metadata"]},
-                metadata("A:1", "A", {A: 1}),
-                context,
-            );
-
-            root = applyActionToRoot(
-                root,
-                {
-                    type: "map.setValue",
-                    path: ["metadata"],
-                    key: "color",
-                    value: "blue",
-                },
-                metadata("A:2", "A", {A: 2}),
-                context,
-            );
-
-            const next = applyActionToRoot(
-                root,
-                {
-                    type: "map.delete",
-                    path: ["metadata"],
-                    key: "color",
-                },
-                metadata("A:3", "A", {A: 3}),
-                context,
-            );
-
-            if (!isObjectNodeState(next)) {
-                throw new Error("Expected object root");
-            }
-
-            const mapNode = getObjectField(next.state, "metadata")?.node;
-            if (!mapNode || !isMapNodeState(mapNode)) {
-                throw new Error("Expected map node");
-            }
-
-            expect(getMapEntry(mapNode.state, "color")).toEqual({
-                node: null,
-                entryVersion: {
-                    opId: "A:3",
-                    replicaId: "A",
-                    clock: {A: 3},
-                    timestamp: undefined,
-                },
-            });
-        });
-
-        it("throws when map.setValue targets non-map node", () => {
-            const root = createObjectNodeState();
-
-            expect(() =>
-                applyActionToRoot(
-                    root,
-                    {
-                        type: "map.setValue",
-                        path: [],
-                        key: "color",
-                        value: "blue",
-                    },
-                    metadata("A:1", "A", {A: 1}),
-                    context,
-                ),
-            ).toThrow('map.setValue expects map node, got "object"');
         });
     });
 
@@ -1012,7 +820,7 @@ describe("runtime/apply", () => {
                     metadata("A:2", "A", {A: 2}),
                     context,
                 ),
-            ).toThrow('Parent path must resolve to object or map. Got "primitive"');
+            ).toThrow('Parent path must resolve to object. Got "primitive"');
         });
 
         it("throws when node.init* targets root path", () => {

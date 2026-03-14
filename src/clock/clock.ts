@@ -1,24 +1,17 @@
 export type ReplicaId = string;
 export type VectorClock = Record<ReplicaId, number>;
 
-export type ClockRelation =
-    | "equal"
-    | "before"
-    | "after"
-    | "concurrent";
+export enum ClockRelation {
+    EQUAL,
+    BEFORE,
+    AFTER,
+    CONCURRENT
+}
 
 export interface ClockState {
     replicaId: ReplicaId;
     clock: VectorClock;
     counter: number;
-}
-
-export function emptyClock(): VectorClock {
-    return {};
-}
-
-export function cloneClock(clock: VectorClock): VectorClock {
-    return {...clock};
 }
 
 export function getClockValue(
@@ -37,14 +30,6 @@ export function setClockValue(
         ...clock,
         [replicaId]: value,
     };
-}
-
-export function tickClock(
-    clock: VectorClock,
-    replicaId: ReplicaId,
-): VectorClock {
-    const nextValue = getClockValue(clock, replicaId) + 1;
-    return setClockValue(clock, replicaId, nextValue);
 }
 
 export function mergeClocks(
@@ -81,44 +66,43 @@ export function compareClocks(
     let aGreater = false;
 
     for (const replicaId of replicaIds) {
-        const av = getClockValue(a, replicaId);
-        const bv = getClockValue(b, replicaId);
+        const aValue = getClockValue(a, replicaId);
+        const bValue = getClockValue(b, replicaId);
 
-        if (av < bv) {
+        if (aValue < bValue) {
             aLess = true;
-        } else if (av > bv) {
+        } else if (aValue > bValue) {
             aGreater = true;
         }
     }
 
     if (!aLess && !aGreater) {
-        return "equal";
+        return ClockRelation.EQUAL;
     }
 
     if (aLess && !aGreater) {
-        return "before";
+        return ClockRelation.BEFORE;
     }
 
     if (!aLess && aGreater) {
-        return "after";
+        return ClockRelation.AFTER;
     }
 
-    return "concurrent";
+    return ClockRelation.CONCURRENT;
 }
+
 export function createClockState(
     replicaId: ReplicaId,
 ): ClockState {
     return {
         replicaId,
-        clock: emptyClock(),
+        clock: {},
         counter: 0,
     };
 }
 
 export function issueClock(state: ClockState): {
-    state: ClockState;
-    clock: VectorClock;
-    counter: number;
+    state: ClockState
 } {
     const nextCounter = state.counter + 1;
     const nextClock = {
@@ -131,9 +115,7 @@ export function issueClock(state: ClockState): {
             replicaId: state.replicaId,
             clock: nextClock,
             counter: nextCounter,
-        },
-        clock: nextClock,
-        counter: nextCounter,
+        }
     };
 }
 

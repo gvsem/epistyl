@@ -1,61 +1,37 @@
 # Epistyl
 
-**Epistyl** is an experimental CRDT runtime for building **event-sourced, eventually consistent collaborative systems**.
+**Epistyl** is an experimental CRDT runtime for **event-sourced replication of composite objects**.
 
-It provides:
+It is designed for systems where objects are edited independently on multiple replicas and must later converge deterministically.
 
-- deterministic operation ordering
-- conflict-free replicated data types (CRDTs)
-- transaction history replay
-- deterministic object materialization
-- typed runtime model
-- JSON-like view projection for applications
+## Features
 
-The goal of this project is to provide a **minimal but correct CRDT runtime** that can power collaborative systems like calendars, task trackers, and document editors.
+- operation-based CRDT model
+- vector clocks for causal ordering
+- explicit `LWW` and `MV` register semantics
+- composable node types:
+  - `object`
+  - `set`
+  - `array`
+  - `primitive`
+  - `ref`
+- deterministic history replay
+- replica merge support
+- JSON-like materialized views
+- transaction-aware operation history
 
----
 
-# Features
+## Core Model
 
-- **Operation-based CRDT model**
-- **Vector clocks for causal ordering**
-- **Deterministic conflict resolution**
-- **Multiple register semantics**
-  - LWW (Last-Write-Wins)
-  - MV (Multi-Value)
-- **Composable CRDT containers**
-  - Object
-  - Map
-  - Set
-  - Array
-- **Transaction-based operation history**
-- **Deterministic state materialization**
-- **JSON-like application views**
+Epistyl is built around a small pipeline:
 
----
-
-# Installation
-
-```bash
-npm install @gvsem/epistyl
+```text
+actions -> operations -> replica history -> materialization -> view
 ```
 
----
+### Operation
 
-# Core Concepts
-
-Epistyl is built around a few core primitives.
-
-## Operations
-
-Every mutation is represented as an **operation**.
-
-Operations are immutable records that contain:
-
-- the **replica that produced the operation**
-- the **vector clock snapshot**
-- the **target object**
-- the **domain action**
+Every local change is represented as an immutable operation.
 
 ```ts
 export interface Operation {
@@ -68,80 +44,39 @@ export interface Operation {
 }
 ```
 
-Operations are **totally ordered deterministically**, even when they are concurrent.
+### Vector clocks
 
-This guarantees that **every replica will materialize the same state**.
+Vector clocks are used to detect:
 
----
-
-# Vector Clocks
-
-Epistyl uses **vector clocks** to determine causal relationships.
+- causal order
+- concurrency
+- equality
 
 ```ts
 type VectorClock = Record<string, number>
 ```
 
-The runtime can determine whether operations are:
+### CRDT node graph
 
-- `before`
-- `after`
-- `concurrent`
-- `equal`
+Objects are represented as a tree of typed CRDT nodes.
 
-```ts
-compareClocks(a, b)
-```
+- leaf nodes:
+  - `primitive`
+  - `ref`
+- container nodes:
+  - `object`
+  - `set`
+  - `array`
 
-This allows the runtime to safely merge operations coming from multiple replicas.
+This allows different fields of the same object to have different merge semantics.
 
----
+## Register Semantics
 
-# CRDT Node Model
+Leaf nodes support two register modes.
 
-Epistyl represents objects as a **tree of CRDT nodes**.
+### LWW
 
-Nodes can be either:
-
-### Leaf nodes
-
-| Kind | Description |
-|-----|------|
-| primitive | numbers, strings, booleans |
-| ref | reference to another object |
-
-### Container nodes
-
-| Kind | Description |
-|-----|------|
-| object | structured fields |
-| map | key-value dictionary |
-| set | OR-Set |
-| array | ordered sequence |
-
-Example node state:
-
-```ts
-{
-  kind: "object",
-  state: {
-    fields: {
-      title: { node: PrimitiveNodeState },
-      tags: { node: SetNodeState }
-    }
-  }
-}
-```
-
----
-
-# Register Semantics
-
-Leaf values can use different **conflict resolution semantics**.
-
-## LWW — Last Write Wins
-
-Only the causally latest value survives.
+Last write wins.
 
 ```ts
 {
@@ -149,7 +84,7 @@ Only the causally latest value survives.
 }
 ```
 
-## MV — Multi Value Register
+### MV
 
 Concurrent values are preserved.
 
@@ -157,49 +92,32 @@ Concurrent values are preserved.
 {
   title: {
     kind: "mv",
-    values: [
-      "Team Sync",
-      "Weekly Sync"
-    ]
+    values: ["Team Sync", "Weekly Sync"]
   }
 }
 ```
 
----
+## Runtime Structure
 
-# Runtime Architecture
-
-Epistyl is organized into a small set of layers.
-
-```
-core/
-  clock.ts
-
-ops/
-  action.ts
-  operation.ts
-  transaction.ts
-
-crdt/
-  register.ts
-  object.ts
-  map.ts
-  set.ts
-  array.ts
-  state.ts
-
-runtime/
-  apply.ts
-  replica.ts
-  materializer.ts
-  view.ts
+```text
+src/
+  core/
+  ops/
+  crdt/
+  runtime/
 ```
 
----
+Main runtime responsibilities:
 
-# Replica State
+- issue operations
+- store replica history
+- merge histories
+- replay operations
+- project JSON-like views
 
-Each replica maintains:
+## Replica State
+
+Each replica stores:
 
 ```ts
 interface ReplicaState {
@@ -209,83 +127,39 @@ interface ReplicaState {
 }
 ```
 
-Replica state stores:
-
-- the **local vector clock**
-- the **history of operations per object**
-
----
-
-# Applying Local Changes
-
-Local changes produce new operations.
+## Applying Local Changes
 
 ```ts
-const issued = issueOperation(replica, action)
-
-replica = appendOperation(
-  issued.replica,
-  issued.operation
-)
+replica = applyLocalAction(replica, "event-1", {
+  type: "field.set",
+  path: ["title"],
+  value: "Team Sync"
+})
 ```
 
-For convenience this is often wrapped:
-
-```ts
-function applyLocalAction(replica, objectId, action) {
-  const issued = issueOperation(replica, action)
-  return appendOperation(issued.replica, issued.operation)
-}
-```
-
----
-
-# Replica Merging
-
-Replicas exchange operation histories and merge them.
+## Merging Replicas
 
 ```ts
 const merged = mergeReplicaStates(replicaA, replicaB)
 ```
 
-The merge process:
+Merge combines histories and clocks, then materialization reconstructs the current object state.
 
-1. unions object histories
-2. deduplicates operations
-3. sorts operations deterministically
-4. merges vector clocks
-
----
-
-# Deterministic Materialization
-
-The runtime can reconstruct the current object state by **replaying operations**.
+## Materialization
 
 ```ts
-const result = materializeReplicaObject(
-  replica,
-  objectId,
-  {
-    applyContext
-  }
-)
+const result = materializeReplicaObject(replica, "event-1", {
+  applyContext
+})
 ```
 
-Materialization is deterministic across replicas.
-
----
-
-# JSON View Projection
-
-Applications rarely want CRDT internal structures.
-
-Epistyl provides **views** that convert CRDT state into JSON-like objects.
+## View Projection
 
 ```ts
-const view = viewNode(materialized.root)
+const view = viewNode(result.root)
 ```
 
-Example result:
+Example:
 
 ```ts
 {
@@ -293,19 +167,11 @@ Example result:
     kind: "mv",
     values: ["Team Sync", "Weekly Sync"]
   },
-  attendees: [
-    { type: "ref", objectId: "user-2" },
-    { type: "ref", objectId: "user-3" }
-  ],
   tags: ["team", "planning"]
 }
 ```
 
----
-
-# Example: Collaborative Calendar Event
-
-Below is a simplified example showing two replicas editing the same calendar event.
+## Example
 
 ```ts
 let replicaA = createReplicaState("A")
@@ -326,107 +192,26 @@ replicaB = applyLocalAction(replicaB, "event-1", {
 const merged = mergeReplicaStates(replicaA, replicaB)
 
 const view = viewNode(
-  materializeReplicaObject(
-    merged,
-    "event-1",
-    { applyContext }
-  ).root
-)
-
-console.log(view)
-```
-
-Result:
-
-```ts
-{
-  title: {
-    kind: "mv",
-    values: ["Team Sync", "Weekly Sync"]
-  }
-}
-```
-
----
-
-# Debugging Replica State
-
-Replica state can be inspected at any time.
-
-```ts
-console.log(
-  JSON.stringify(
-    exportReplicaState(replica),
-    null,
-    2
-  )
+  materializeReplicaObject(merged, "event-1", {
+    applyContext
+  }).root
 )
 ```
 
-Or inspect the materialized view:
-
-```ts
-console.log(
-  JSON.stringify(viewNode(result.root), null, 2)
-)
-```
-
----
-
-# Testing Scenarios
-
-The project includes extensive tests covering:
-
-- causal ordering
-- register semantics
-- set convergence
-- array ordering
-- map conflict resolution
-- replica merges
-- deterministic materialization
-
-Example integration scenario:
-
-```ts
-replicaA.addTag("urgent")
-replicaB.addTag("planning")
-
-const merged = mergeReplicaStates(replicaA, replicaB)
-
-expect(view.tags).toEqual([
-  "planning",
-  "urgent"
-])
-```
-
----
-
-# Design Goals
+## Design Goals
 
 Epistyl aims to be:
 
-- **minimal**
-- **deterministic**
-- **correct**
-- **type-safe**
-- **event-sourced**
+- deterministic
+- minimal
+- type-aware
+- event-sourced
+- suitable for domain object modeling
 
-It is designed primarily as:
+## Status
 
-- a **CRDT reference implementation**
-- a **foundation for collaborative systems**
-- a **teaching tool for distributed state models**
+Experimental.
 
----
-
-# Status
-
-Epistyl is currently **experimental**.
-
-The API may change while the runtime evolves.
-
----
-
-# License
+## License
 
 MIT

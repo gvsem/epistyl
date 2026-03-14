@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {CalendarEventHarness} from "./Calendar";
+import {v} from "vitest/dist/chunks/reporters.d.CWXNI2jG";
 
 describe("scenarios/calendar/extended", () => {
     it("bootstrap produces expected base calendar view", () => {
@@ -97,17 +98,17 @@ describe("scenarios/calendar/extended", () => {
     it("shows intermediate local states for tags", () => {
         const a = new CalendarEventHarness({ replicaId: "A" }).bootstrapBaseEvent();
 
-        expect(a.getTags()).toEqual(["team"]);
+        expect(a.getTags().sort()).toEqual(["team"]);
 
         a.addTag("urgent");
-        expect(a.getTags()).toEqual(["team", "urgent"]);
+        expect(a.getTags().sort()).toEqual(["team", "urgent"]);
         expect(a.hasTag("urgent")).toBe(true);
 
         a.addTag("planning");
-        expect(a.getTags()).toEqual(["planning", "team", "urgent"]);
+        expect(a.getTags().sort()).toEqual(["planning", "team", "urgent"]);
 
         a.removeTag("team");
-        expect(a.getTags()).toEqual(["planning", "urgent"]);
+        expect(a.getTags().sort()).toEqual(["planning", "urgent"]);
         expect(a.hasTag("team")).toBe(false);
     });
 
@@ -267,14 +268,14 @@ describe("scenarios/calendar/extended", () => {
         a.addTag("urgent");
         b.addTag("planning");
 
-        expect(a.getTags()).toEqual(["team", "urgent"]);
-        expect(b.getTags()).toEqual(["planning", "team"]);
+        expect(a.getTags().sort()).toEqual(["team", "urgent"]);
+        expect(b.getTags().sort()).toEqual(["planning", "team"]);
 
         const merged = new CalendarEventHarness({ replicaId: "M" })
             .replaceReplica(a.replica)
             .mergeFrom(b, "M");
 
-        expect(merged.getTags()).toEqual(["planning", "team", "urgent"]);
+        expect(merged.getTags().sort()).toEqual(["planning", "team", "urgent"]);
     });
 
     it("keeps unseen set add after concurrent remove", () => {
@@ -360,7 +361,7 @@ describe("scenarios/calendar/extended", () => {
         expect(a.getRoom()).toBe("A-101");
         expect(a.getBuilding()).toBe("HQ");
         expect(a.getColor()).toBe("blue");
-        expect(a.getTags()).toEqual(["planning", "team", "urgent"]);
+        expect(a.getTags().sort()).toEqual(["planning", "team", "urgent"]);
     });
 
     it("keeps base fields unchanged when only attendees change", () => {
@@ -434,7 +435,12 @@ describe("scenarios/calendar/extended", () => {
             .setRoom("Follower Room")
             .addTag("follower");
 
-        expect(follower.view()).toEqual({
+        const view = follower.view() as Record<string, any>
+
+        expect({
+            ...view,
+            tags: [...view.tags].sort()
+        }).toEqual({
             attendees: [{ type: "ref", objectId: "user-2" }],
             description: "Weekly planning",
             endAt: "2026-03-07T11:00:00Z",
@@ -479,7 +485,12 @@ describe("scenarios/calendar/extended", () => {
             .setNote("note-v2")
             .setNote("note-v3");
 
-        expect(a.view()).toEqual({
+        const view = a.view() as Record<string, any>
+
+        expect({
+            ...view,
+            tags: [...view.tags].sort()
+        }).toEqual({
             attendees: [
                 { type: "ref", objectId: "user-3" },
                 { type: "ref", objectId: "user-4" },
@@ -520,7 +531,11 @@ describe("scenarios/calendar/extended", () => {
             .replaceReplica(a.replica)
             .mergeFrom(b, "AB");
 
-        expect(ab.view()).toEqual({
+        const view = ab.view() as Record<string, any>
+        expect({
+            ...view,
+            tags: [...view.tags].sort()
+        }).toEqual({
             attendees: [{ type: "ref", objectId: "user-2" }],
             description: "Weekly planning",
             endAt: "2026-03-07T11:00:00Z",
@@ -548,7 +563,11 @@ describe("scenarios/calendar/extended", () => {
             .replaceReplica(ab.replica)
             .mergeFrom(c, "ABC");
 
-        expect(abc.view()).toEqual({
+        const view2 = abc.view() as Record<string, any>;
+        expect({
+            ...view2,
+            tags: [...view2.tags].sort()
+        }).toEqual({
             attendees: [
                 { type: "ref", objectId: "user-2" },
                 { type: "ref", objectId: "user-5" },

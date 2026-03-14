@@ -1,14 +1,12 @@
-import { describe, it, expect } from "vitest";
+import {describe, expect, it} from "vitest";
 
-import { addRegisterVersion } from "../../src/crdt/register";
-import { setObjectField, deleteObjectField } from "../../src/crdt/object";
-import { setMapEntry, deleteMapEntry } from "../../src/crdt/map";
-import { addSetValue, removeSetValue } from "../../src/crdt/set";
-import { insertArrayElement, deleteArrayElement } from "../../src/crdt/array";
+import {addRegisterVersion} from "../../src/crdt/register";
+import {deleteObjectField, setObjectField} from "../../src/crdt/object";
+import {addSetValue, removeSetValue} from "../../src/crdt/set";
+import {deleteArrayElement, insertArrayElement} from "../../src/crdt/array";
 
 import {
     createArrayNodeState,
-    createMapNodeState,
     createObjectNodeState,
     createPrimitiveNodeState,
     createRefNodeState,
@@ -18,9 +16,8 @@ import {
 
 import {
     viewArrayNode,
-    viewMapNode,
-    viewNode,
     viewObjectNode,
+    viewNode,
     viewPrimitiveNode,
     viewRefNode,
     viewSetNode,
@@ -232,81 +229,6 @@ describe("runtime/view", () => {
         });
     });
 
-    describe("viewMapNode", () => {
-        it("returns empty object for empty map node", () => {
-            const node = createMapNodeState();
-            expect(viewMapNode(node)).toEqual({});
-        });
-
-        it("renders visible entries recursively", () => {
-            let node = createMapNodeState();
-
-            node = {
-                kind: "map",
-                state: setMapEntry(
-                    node.state,
-                    "color",
-                    primitiveMvNode([
-                        { value: "blue", opId: "A:1", replicaId: "A", clock: { A: 1 } },
-                    ]),
-                    { opId: "A:2", replicaId: "A", clock: { A: 2 } },
-                ),
-            };
-
-            node = {
-                kind: "map",
-                state: setMapEntry(
-                    node.state,
-                    "owner",
-                    refLwwNode([
-                        {
-                            value: { type: "ref", objectId: "user-1" },
-                            opId: "A:3",
-                            replicaId: "A",
-                            clock: { A: 3 },
-                        },
-                    ]),
-                    { opId: "A:4", replicaId: "A", clock: { A: 4 } },
-                ),
-            };
-
-            expect(viewMapNode(node)).toEqual({
-                color: {
-                    kind: "mv",
-                    values: ["blue"],
-                },
-                owner: { type: "ref", objectId: "user-1" },
-            });
-        });
-
-        it("skips tombstoned entries", () => {
-            let node = createMapNodeState();
-
-            node = {
-                kind: "map",
-                state: setMapEntry(
-                    node.state,
-                    "color",
-                    primitiveMvNode([
-                        { value: "blue", opId: "A:1", replicaId: "A", clock: { A: 1 } },
-                    ]),
-                    { opId: "A:2", replicaId: "A", clock: { A: 2 } },
-                ),
-            };
-
-            node = {
-                kind: "map",
-                state: deleteMapEntry(
-                    node.state,
-                    "color",
-                    { opId: "A:3", replicaId: "A", clock: { A: 3 } },
-                ),
-            };
-
-            expect(viewMapNode(node)).toEqual({});
-        });
-    });
-
     describe("viewSetNode", () => {
         it("returns empty array for empty set", () => {
             const node = createSetNodeState();
@@ -335,8 +257,8 @@ describe("runtime/view", () => {
                     clock: { A: 2 },
                 }),
             };
-
-            expect(viewSetNode(node)).toEqual(["alpha", "zeta"]);
+            const view = viewSetNode(node).sort()
+            expect(view).toEqual(["alpha", "zeta"]);
         });
 
         it("returns present ref values", () => {
@@ -524,11 +446,6 @@ describe("runtime/view", () => {
 
         it("dispatches object node", () => {
             const node = createObjectNodeState();
-            expect(viewNode(node)).toEqual({});
-        });
-
-        it("dispatches map node", () => {
-            const node = createMapNodeState();
             expect(viewNode(node)).toEqual({});
         });
 

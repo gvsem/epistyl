@@ -1,13 +1,16 @@
-import {type ClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../core/clock";
+import {ClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
 import type {OpId} from "../ops/operation";
-import type {RegisterSemantics} from "./model";
+import {compareVersionStamps} from "./version";
+
+export type RegisterSemantics =
+    | "lww"
+    | "mv";
 
 export interface RegisterVersion<T> {
     value: T;
     opId: OpId;
     replicaId: ReplicaId;
     clock: VectorClock;
-    timestamp?: string;
 }
 
 export interface RegisterState<T> {
@@ -38,37 +41,7 @@ export function createRegisterState<T>(
     };
 }
 
-export function compareRegisterVersionsByCausality<T>(
-    a: RegisterVersion<T>,
-    b: RegisterVersion<T>,
-): ClockRelation {
-    return compareClocks(a.clock, b.clock);
-}
-
-export function compareRegisterVersionsForLww<T>(
-    a: RegisterVersion<T>,
-    b: RegisterVersion<T>,
-): number {
-    if (a.opId === b.opId) {
-        return 0;
-    }
-
-    const relation = compareRegisterVersionsByCausality(a, b);
-
-    if (relation === "before") {
-        return -1;
-    }
-
-    if (relation === "after") {
-        return 1;
-    }
-
-    if (a.replicaId !== b.replicaId) {
-        return a.replicaId < b.replicaId ? -1 : 1;
-    }
-
-    return a.opId < b.opId ? -1 : 1;
-}
+export const compareRegisterVersionsForLww = compareVersionStamps
 
 export function sortRegisterVersions<T>(
     versions: readonly RegisterVersion<T>[],
@@ -76,7 +49,7 @@ export function sortRegisterVersions<T>(
     return [...versions].sort(compareRegisterVersionsForLww);
 }
 
-export function joinRegisterVersions<T>(
+function joinRegisterVersions<T>(
     versions: readonly RegisterVersion<T>[],
     incoming: RegisterVersion<T>,
 ): RegisterVersion<T>[] {
@@ -90,13 +63,13 @@ export function joinRegisterVersions<T>(
             continue;
         }
 
-        const relation = compareRegisterVersionsByCausality(existing, incoming);
+        const relation = compareClocks(existing.clock, incoming.clock);
 
-        if (relation === "before") {
+        if (relation === ClockRelation.BEFORE) {
             continue;
         }
 
-        if (relation === "after") {
+        if (relation === ClockRelation.AFTER) {
             next.push(existing);
             shouldInsertIncoming = false;
             continue;
@@ -122,29 +95,6 @@ export function addRegisterVersion<T>(
     };
 }
 
-export function mergeRegisterStates<T>(
-    a: RegisterState<T>,
-    b: RegisterState<T>,
-): RegisterState<T> {
-    if (a.semantics !== b.semantics) {
-        throw new Error(
-            `Cannot merge register states with different semantics: ${a.semantics} vs ${b.semantics}`,
-        );
-    }
-
-    let merged = createRegisterState<T>(a.semantics);
-
-    for (const version of a.versions) {
-        merged = addRegisterVersion(merged, version);
-    }
-
-    for (const version of b.versions) {
-        merged = addRegisterVersion(merged, version);
-    }
-
-    return merged;
-}
-
 export function getLwwWinner<T>(
     state: RegisterState<T>,
 ): RegisterVersion<T> | null {
@@ -152,10 +102,10 @@ export function getLwwWinner<T>(
         return null;
     }
 
-    let winner = state.versions[0]!;
+    let winner = state.versions[0]
 
     for (let i = 1; i < state.versions.length; i += 1) {
-        const candidate = state.versions[i]!;
+        const candidate = state.versions[i]
         if (compareRegisterVersionsForLww(candidate, winner) > 0) {
             winner = candidate;
         }
@@ -170,9 +120,7 @@ export function getMvValues<T>(
     return sortRegisterVersions(state.versions);
 }
 
-export function getRegisterView<T>(
-    state: RegisterState<T>,
-): RegisterView<T> {
+export function getRegisterView<T>(state: RegisterState<T>): RegisterView<T> {
     if (state.semantics === "lww") {
         return {
             semantics: "lww",

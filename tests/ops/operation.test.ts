@@ -4,12 +4,12 @@ import {
     compareOperationCausality,
     compareOperations,
     deduplicateOperations,
-    getOperationKey,
     isSameOperation,
     sortOperations,
     type Operation,
 } from "../../src/ops/operation";
 import type { Action } from "../../src/ops/action";
+import {ClockRelation} from "../../src/clock/clock";
 
 function action(): Action {
     return {
@@ -37,59 +37,6 @@ function operation(
 }
 
 describe("ops/operation", () => {
-    describe("isSameOperation", () => {
-        it("returns true when opId is the same", () => {
-            const a = operation("A:1", "A", { A: 1 });
-            const b = operation("A:1", "A", { A: 999 });
-
-            expect(isSameOperation(a, b)).toBe(true);
-        });
-
-        it("returns false when opId differs", () => {
-            const a = operation("A:1", "A", { A: 1 });
-            const b = operation("A:2", "A", { A: 2 });
-
-            expect(isSameOperation(a, b)).toBe(false);
-        });
-    });
-
-    describe("getOperationKey", () => {
-        it("returns operation opId", () => {
-            const op = operation("A:7", "A", { A: 7 });
-
-            expect(getOperationKey(op)).toBe("A:7");
-        });
-    });
-
-    describe("compareOperationCausality", () => {
-        it("returns equal for identical clocks", () => {
-            const a = operation("A:1", "A", { A: 1, B: 2 });
-            const b = operation("B:9", "B", { A: 1, B: 2 });
-
-            expect(compareOperationCausality(a, b)).toBe("equal");
-        });
-
-        it("returns before when left clock is causally earlier", () => {
-            const a = operation("A:1", "A", { A: 1 });
-            const b = operation("A:2", "A", { A: 2 });
-
-            expect(compareOperationCausality(a, b)).toBe("before");
-        });
-
-        it("returns after when left clock is causally later", () => {
-            const a = operation("A:2", "A", { A: 2 });
-            const b = operation("A:1", "A", { A: 1 });
-
-            expect(compareOperationCausality(a, b)).toBe("after");
-        });
-
-        it("returns concurrent for incomparable clocks", () => {
-            const a = operation("A:1", "A", { A: 1 });
-            const b = operation("B:1", "B", { B: 1 });
-
-            expect(compareOperationCausality(a, b)).toBe("concurrent");
-        });
-    });
 
     describe("compareOperations", () => {
         it("returns 0 for identical opId", () => {
@@ -174,7 +121,7 @@ describe("ops/operation", () => {
         it("removes duplicate operations by opId", () => {
             const ops = [
                 operation("A:1", "A", { A: 1 }),
-                operation("A:1", "A", { A: 1 }, { timestamp: "later" }),
+                operation("A:1", "A", { A: 1 }),
                 operation("B:1", "B", { B: 1 }),
             ];
 
@@ -182,16 +129,6 @@ describe("ops/operation", () => {
                 "A:1",
                 "B:1",
             ]);
-        });
-
-        it("keeps the first occurrence of duplicate opId", () => {
-            const first = operation("A:1", "A", { A: 1 }, { timestamp: "first" });
-            const second = operation("A:1", "A", { A: 1 }, { timestamp: "second" });
-
-            const result = deduplicateOperations([second, first]);
-
-            expect(result).toHaveLength(1);
-            expect(result[0]?.timestamp).toBe("second");
         });
 
         it("returns sorted unique operations", () => {

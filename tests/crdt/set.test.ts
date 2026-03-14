@@ -12,7 +12,6 @@ import {
     getPresentSetValues,
     getRemovedTagsForValue,
     hasSetValue,
-    mergeSetStates,
     removeSetValue,
     type SetAddVersion,
     type SetRemoveInput,
@@ -26,10 +25,7 @@ type TestValue = string;
 const adapter: SetValueAdapter<TestValue> = {
     equals(left, right) {
         return left === right;
-    },
-    compare(left, right) {
-        return left < right ? -1 : left > right ? 1 : 0;
-    },
+    }
 };
 
 function add(
@@ -301,57 +297,6 @@ describe("crdt/set", () => {
         });
     });
 
-    describe("mergeSetStates", () => {
-        it("unions and deduplicates adds and removes", () => {
-            const left: SetState<string> = {
-                adds: [
-                    add("team", "A:1", "A", { A: 1 }),
-                ],
-                removes: [
-                    removeVersion("team", "A:2", "A", { A: 2 }, ["A:1"]),
-                ],
-            };
-
-            const right: SetState<string> = {
-                adds: [
-                    add("urgent", "B:1", "B", { B: 1 }),
-                    add("team", "A:1", "A", { A: 1 }),
-                ],
-                removes: [
-                    removeVersion("team", "A:2", "A", { A: 2 }, ["A:1"]),
-                    removeVersion("urgent", "B:2", "B", { B: 2 }, ["B:1"]),
-                ],
-            };
-
-            expect(mergeSetStates(left, right)).toEqual({
-                adds: [
-                    add("team", "A:1", "A", { A: 1 }),
-                    add("urgent", "B:1", "B", { B: 1 }),
-                ],
-                removes: [
-                    removeVersion("team", "A:2", "A", { A: 2 }, ["A:1"]),
-                    removeVersion("urgent", "B:2", "B", { B: 2 }, ["B:1"]),
-                ],
-            });
-        });
-
-        it("is commutative", () => {
-            const left: SetState<string> = {
-                adds: [add("team", "A:1", "A", { A: 1 })],
-                removes: [],
-            };
-
-            const right: SetState<string> = {
-                adds: [add("urgent", "B:1", "B", { B: 1 })],
-                removes: [],
-            };
-
-            expect(mergeSetStates(left, right)).toEqual(
-                mergeSetStates(right, left),
-            );
-        });
-    });
-
     describe("getRemovedTagsForValue", () => {
         it("returns removed tags only for matching value", () => {
             const state: SetState<string> = {
@@ -456,27 +401,6 @@ describe("crdt/set", () => {
                 {
                     value: "urgent",
                     liveTags: ["A:2"],
-                },
-            ]);
-        });
-
-        it("sorts values using adapter.compare when provided", () => {
-            const state: SetState<string> = {
-                adds: [
-                    add("zeta", "A:1", "A", { A: 1 }),
-                    add("alpha", "A:2", "A", { A: 2 }),
-                ],
-                removes: [],
-            };
-
-            expect(getPresentSetValues(state, adapter)).toEqual([
-                {
-                    value: "alpha",
-                    liveTags: ["A:2"],
-                },
-                {
-                    value: "zeta",
-                    liveTags: ["A:1"],
                 },
             ]);
         });

@@ -1,31 +1,24 @@
 import {
+    type ClockState,
     createClockState,
     getClockValue,
+    issueClock,
     mergeClocks,
     observeClock,
-    type ClockState, issueClock, ReplicaId,
-} from "../core/clock";
+    ReplicaId,
+} from "../clock/clock";
 
-import type {
-    ObjectId,
-    Operation, TxId,
-} from "../ops/operation";
+import type {ObjectId, Operation, TxId,} from "../ops/operation";
+import {deduplicateOperations, sortOperations,} from "../ops/operation";
 
-import {
-    deduplicateOperations,
-    sortOperations,
-} from "../ops/operation";
+import type {TransactionBuilder, TransactionRecord} from "../ops/transaction";
+import {createTransactionBuilder} from "../ops/transaction";
 
-import type { TransactionRecord } from "../ops/transaction";
+import type {NodeState} from "../crdt/state";
 
-import type { NodeState } from "../crdt/state";
+import type {ApplyContext} from "./apply";
 
-import type { ApplyContext } from "./apply";
-
-import {
-    materializeObjectHistory,
-    type MaterializeResult,
-} from "./materializer";
+import {materializeObjectHistory, type MaterializeResult,} from "./materializer";
 import {Action} from "../ops/action";
 
 export interface ObjectHistory {
@@ -69,40 +62,11 @@ export function createReplicaState(
     };
 }
 
-export function listReplicaObjectIds(
-    replica: ReplicaState,
-): ObjectId[] {
-    return Object.keys(replica.objects).sort();
-}
-
 export function getObjectHistory(
     replica: ReplicaState,
     objectId: ObjectId,
 ): ObjectHistory | null {
     return replica.objects[objectId] ?? null;
-}
-
-export function upsertObjectHistory(
-    replica: ReplicaState,
-    history: ObjectHistory,
-): ReplicaState {
-    let nextClockState = replica.clockState;
-
-    for (const operation of history.operations) {
-        nextClockState = observeClock(nextClockState, operation.clock);
-    }
-
-    return {
-        ...replica,
-        clockState: nextClockState,
-        objects: {
-            ...replica.objects,
-            [history.objectId]: createObjectHistory(
-                history.objectId,
-                history.operations,
-            ),
-        },
-    };
 }
 
 export function appendOperation(
@@ -201,49 +165,6 @@ export function mergeReplicaStates(
     };
 }
 
-export function exportReplicaState(
-    replica: ReplicaState,
-): ReplicaState {
-    return {
-        replicaId: replica.replicaId,
-        clockState: {
-            replicaId: replica.clockState.replicaId,
-            clock: { ...replica.clockState.clock },
-            counter: replica.clockState.counter,
-        },
-        objects: Object.fromEntries(
-            Object.entries(replica.objects).map(([objectId, history]) => [
-                objectId,
-                {
-                    objectId: history.objectId,
-                    operations: [...history.operations],
-                },
-            ]),
-        ),
-    };
-}
-
-export function importReplicaState(
-    data: ReplicaState,
-): ReplicaState {
-    let replica = createReplicaState(data.replicaId);
-
-    for (const history of Object.values(data.objects)) {
-        replica = upsertObjectHistory(replica, history);
-    }
-
-    replica = {
-        ...replica,
-        clockState: {
-            replicaId: data.clockState.replicaId,
-            clock: { ...data.clockState.clock },
-            counter: data.clockState.counter,
-        },
-    };
-
-    return replica;
-}
-
 export function materializeReplicaObject(
     replica: ReplicaState,
     objectId: ObjectId,
@@ -253,10 +174,7 @@ export function materializeReplicaObject(
         getObjectHistory(replica, objectId) ??
         createObjectHistory(objectId);
 
-    return materializeObjectHistory(history, {
-        applyContext: options.applyContext,
-        initialRoot: options.initialRoot,
-    });
+    return materializeObjectHistory(history, options);
 }
 
 export function issueReplicaOperation(
@@ -268,18 +186,18 @@ export function issueReplicaOperation(
     const issued = issueClock(replica.clockState);
 
     const operation: Operation = {
-        opId: `${replica.replicaId}:${issued.counter}`,
-        txId: txId ?? `${replica.replicaId}:tx:${issued.counter}`,
+        opId: `${replica.replicaId}:${issued.state.counter}`,
+        txId: txId ?? `${replica.replicaId}:tx:${issued.state.counter}`,
         objectId,
         replicaId: replica.replicaId,
-        clock: issued.clock,
+        clock: issued.state.clock,
         action,
     };
 
     return {
         replica: {
             ...replica,
-            clockState: issued.state,
+            clockState: issued.state
         },
         operation,
     };
@@ -293,4 +211,56 @@ export function applyLocalAction(
 ): ReplicaState {
     const issued = issueReplicaOperation(replica, objectId, action, txId);
     return appendOperation(issued.replica, issued.operation);
+}
+
+export interface IssueTransactionResult {
+    replica: ReplicaState;
+    transaction: TransactionRecord;
+}
+
+export function issueTransaction(
+    replica: ReplicaState,
+    objectId: ObjectId,
+    build: (tx: TransactionBuilder) => void
+): IssueTransactionResult {
+    let workingReplica = replica;
+
+    const txId = `${replica.replicaId}:tx:${replica.clockState.counter + 1}`;
+
+    const builder = createTransactionBuilder(
+        txId,
+        objectId,
+        {
+            replicaId: replica.replicaId,
+            issueOperationMetadata() {
+                const issued = issueClock(workingReplica.clockState);
+
+                workingReplica = {
+                    ...workingReplica,
+                    clockState: issued.state,
+                };
+
+                return {
+                    opId: `${replica.replicaId}:${issued.state.counter}`,
+                    clock: issued.state.clock,
+                };
+            }
+        }
+    );
+
+    build(builder);
+
+    return {
+        replica: workingReplica,
+        transaction: builder.toRecord(),
+    };
+}
+
+export function applyLocalTransaction(
+    replica: ReplicaState,
+    objectId: ObjectId,
+    build: (tx: TransactionBuilder) => void
+): ReplicaState {
+    const issued = issueTransaction(replica, objectId, build);
+    return appendTransaction(issued.replica, issued.transaction);
 }

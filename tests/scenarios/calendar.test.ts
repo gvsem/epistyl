@@ -3,7 +3,7 @@ import {CalendarEventHarness} from "./Calendar";
 
 describe("scenarios/calendar", () => {
     it("merges concurrent MV title updates, LWW nested fields, set union and array inserts", () => {
-        const replicaA = new CalendarEventHarness({replicaId: "A"}).bootstrapBaseEvent();
+        const replicaA: CalendarEventHarness = new CalendarEventHarness({replicaId: "A"}).bootstrapBaseEvent();
         const replicaB = new CalendarEventHarness({replicaId: "B"}).mergeFrom(replicaA, "B");
 
         replicaA
@@ -20,7 +20,12 @@ describe("scenarios/calendar", () => {
             .replaceReplica(replicaA.replica)
             .mergeFrom(replicaB, "M");
 
-        expect(merged.view()).toEqual({
+        const view = merged.view() as Record<string, any>
+
+        expect({
+            ...view,
+            tags: [...view.tags].sort()
+        }).toEqual({
             attendees: [
                 {type: "ref", objectId: "user-2"},
                 {type: "ref", objectId: "user-3"},

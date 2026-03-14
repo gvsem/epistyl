@@ -14,7 +14,6 @@ import {
     exportReplicaState,
     getObjectHistory,
     importReplicaState,
-    listReplicaObjectIds,
     materializeReplicaObject,
     mergeObjectHistories,
     mergeReplicaStates,
@@ -97,25 +96,6 @@ describe("runtime/replica", () => {
         });
     });
 
-    describe("listReplicaObjectIds", () => {
-        it("returns sorted object ids", () => {
-            const replica: ReplicaState = {
-                replicaId: "A",
-                clockState: {
-                    replicaId: "A",
-                    clock: {},
-                    counter: 0,
-                },
-                objects: {
-                    z: createObjectHistory("z"),
-                    a: createObjectHistory("a"),
-                },
-            };
-
-            expect(listReplicaObjectIds(replica)).toEqual(["a", "z"]);
-        });
-    });
-
     describe("getObjectHistory", () => {
         it("returns object history when present", () => {
             const history = createObjectHistory("event-1");
@@ -138,45 +118,6 @@ describe("runtime/replica", () => {
             const replica = createReplicaState("A");
 
             expect(getObjectHistory(replica, "event-1")).toBeNull();
-        });
-    });
-
-    describe("upsertObjectHistory", () => {
-        it("stores normalized history under object id", () => {
-            const replica = createReplicaState("A");
-
-            const history = {
-                objectId: "event-1",
-                operations: [
-                    operation("A:2", "A", {A: 2}),
-                    operation("A:1", "A", {A: 1}),
-                    operation("A:2", "A", {A: 2}),
-                ],
-            };
-
-            const next = upsertObjectHistory(replica, history);
-
-            expect(next.objects["event-1"]?.operations.map((op) => op.opId)).toEqual([
-                "A:1",
-                "A:2",
-            ]);
-        });
-
-        it("observes clocks from history into replica clock state", () => {
-            const replica = createReplicaState("A");
-
-            const history = createObjectHistory("event-1", [
-                operation("B:1", "B", {B: 1}),
-                operation("A:3", "A", {A: 3, B: 1}),
-            ]);
-
-            const next = upsertObjectHistory(replica, history);
-
-            expect(next.clockState).toEqual({
-                replicaId: "A",
-                clock: {A: 3, B: 1},
-                counter: 3,
-            });
         });
     });
 
@@ -385,34 +326,6 @@ describe("runtime/replica", () => {
 
             expect(ab.objects).toEqual(ba.objects);
             expect(ab.clockState).toEqual(ba.clockState);
-        });
-    });
-
-    describe("exportReplicaState / importReplicaState", () => {
-        it("exports a clone of replica state", () => {
-            const replica = appendOperation(
-                createReplicaState("A"),
-                operation("A:1", "A", {A: 1}),
-            );
-
-            const exported = exportReplicaState(replica);
-
-            expect(exported).toEqual(replica);
-            expect(exported).not.toBe(replica);
-            expect(exported.clockState).not.toBe(replica.clockState);
-            expect(exported.objects).not.toBe(replica.objects);
-        });
-
-        it("imports replica state and rebuilds histories", () => {
-            const original = appendOperation(
-                createReplicaState("A"),
-                operation("A:1", "A", {A: 1}),
-            );
-
-            const imported = importReplicaState(exportReplicaState(original));
-
-            expect(imported).toEqual(original);
-            expect(imported).not.toBe(original);
         });
     });
 

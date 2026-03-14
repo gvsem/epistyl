@@ -4,36 +4,27 @@ import type {
     ArrayRemoveAction,
     DeleteFieldAction,
     InitArrayAction,
-    InitMapAction,
     InitObjectAction,
     InitSetAction,
-    LeafValue,
-    MapDeleteAction,
-    MapInitEntryAction,
-    MapSetValueAction,
     ObjectPath,
-    RefValue,
     SetAddAction,
     SetFieldAction,
     SetRemoveAction,
 } from "../ops/action";
+import {ContainerNodeKind} from "../ops/action";
 
 import type {Operation, OpId} from "../ops/operation";
 
-import type {ReplicaId, VectorClock} from "../core/clock";
-import type {RegisterSemantics} from "../crdt/model";
+import type {ReplicaId, VectorClock} from "../clock/clock";
 
-import {addRegisterVersion, type RegisterVersion,} from "../crdt/register";
+import {addRegisterVersion, RegisterSemantics, type RegisterVersion,} from "../crdt/register";
 
-import {deleteObjectField, getObjectField, type ObjectSlotVersion, setObjectField,} from "../crdt/object";
-
-import {deleteMapEntry, getMapEntry, type MapEntryVersion, setMapEntry,} from "../crdt/map";
+import {deleteObjectField, getObjectField, setObjectField,} from "../crdt/object";
 
 import {addSetValue, removeSetValue, type SetAddVersion, type SetRemoveInput,} from "../crdt/set";
 
 import {
     type ArrayElementState,
-    type ArrayElementVersion,
     deleteArrayElement,
     findVisibleElementIdAtIndex,
     insertArrayElement,
@@ -41,19 +32,18 @@ import {
 
 import {
     createArrayNodeState,
-    createMapNodeState,
     createObjectNodeState,
-    createPrimitiveNodeState,
-    createRefNodeState,
     createSetNodeState,
     isArrayNodeState,
-    isMapNodeState,
     isObjectNodeState,
     isPrimitiveNodeState,
     isRefNodeState,
     isSetNodeState,
     type NodeState,
 } from "../crdt/state";
+import {VersionStamp} from "../crdt/version";
+import {assertStringPath, getChildFromContainer, splitParentPath} from "./pathHelpers";
+import {areLeafValuesEqual, createLeafNodeFromValue, isRefValue, LeafValue} from "./leafUtils";
 
 export interface ApplyPolicy {
     defaultPrimitiveSemantics: RegisterSemantics;
@@ -68,10 +58,8 @@ export interface ApplyMetadata {
     opId: OpId;
     replicaId: ReplicaId;
     clock: VectorClock;
-    timestamp?: string;
 }
 
-type ContainerInitKind = "object" | "map" | "set" | "array";
 type SlotRewriter = (existing: NodeState | null) => NodeState | null;
 
 export function applyOperationToRoot(
@@ -86,7 +74,6 @@ export function applyOperationToRoot(
             opId: operation.opId,
             replicaId: operation.replicaId,
             clock: operation.clock,
-            timestamp: operation.timestamp,
         },
         context,
     );
@@ -105,15 +92,6 @@ export function applyActionToRoot(
         case "field.delete":
             return applyFieldDelete(root, action, metadata);
 
-        case "map.setValue":
-            return applyMapSetValue(root, action, metadata, context);
-
-        case "map.initEntry":
-            return applyMapInitEntry(root, action, metadata);
-
-        case "map.delete":
-            return applyMapDelete(root, action, metadata);
-
         case "set.add":
             return applySetAdd(root, action, metadata);
 
@@ -129,9 +107,6 @@ export function applyActionToRoot(
         case "node.initObject":
             return applyNodeInit(root, action, "object", metadata);
 
-        case "node.initMap":
-            return applyNodeInit(root, action, "map", metadata);
-
         case "node.initSet":
             return applyNodeInit(root, action, "set", metadata);
 
@@ -139,8 +114,7 @@ export function applyActionToRoot(
             return applyNodeInit(root, action, "array", metadata);
 
         default: {
-            const exhaustive: never = action;
-            throw new Error(`Unsupported action: ${JSON.stringify(exhaustive)}`);
+            throw new Error(`Unsupported action: ${JSON.stringify(action)}`);
         }
     }
 }
@@ -148,24 +122,6 @@ export function applyActionToRoot(
 /* ============================================================================
  * Value / version helpers
  * ========================================================================== */
-
-export function isRefValue(value: LeafValue): value is RefValue {
-    return (
-        typeof value === "object" &&
-        value !== null &&
-        "type" in value &&
-        value.type === "ref"
-    );
-}
-
-export function createLeafNodeFromValue(
-    value: LeafValue,
-    context: ApplyContext,
-): NodeState {
-    return isRefValue(value)
-        ? createRefNodeState(context.policy.defaultRefSemantics)
-        : createPrimitiveNodeState(context.policy.defaultPrimitiveSemantics);
-}
 
 export function createRegisterVersionFromMetadata<T>(
     value: T,
@@ -175,50 +131,22 @@ export function createRegisterVersionFromMetadata<T>(
         value,
         opId: metadata.opId,
         replicaId: metadata.replicaId,
-        clock: {...metadata.clock},
-        timestamp: metadata.timestamp,
+        clock: {...metadata.clock}
     };
 }
 
-export function createObjectSlotVersionFromMetadata(
-    metadata: ApplyMetadata,
-): ObjectSlotVersion {
+export function createVersionStampFromMetadata(metadata: ApplyMetadata): VersionStamp {
     return {
         opId: metadata.opId,
         replicaId: metadata.replicaId,
-        clock: {...metadata.clock},
-        timestamp: metadata.timestamp,
+        clock: {...metadata.clock}
     };
 }
 
-export function createMapEntryVersionFromMetadata(
-    metadata: ApplyMetadata,
-): MapEntryVersion {
-    return {
-        opId: metadata.opId,
-        replicaId: metadata.replicaId,
-        clock: {...metadata.clock},
-        timestamp: metadata.timestamp,
-    };
-}
-
-export function createArrayElementVersionFromMetadata(
-    metadata: ApplyMetadata,
-): ArrayElementVersion {
-    return {
-        opId: metadata.opId,
-        replicaId: metadata.replicaId,
-        clock: {...metadata.clock},
-        timestamp: metadata.timestamp,
-    };
-}
-
-export function createContainerNode(kind: ContainerInitKind): NodeState {
+export function createContainerNode(kind: ContainerNodeKind): NodeState {
     switch (kind) {
         case "object":
             return createObjectNodeState();
-        case "map":
-            return createMapNodeState();
         case "set":
             return createSetNodeState();
         case "array":
@@ -247,11 +175,11 @@ function replaceObjectChildWithoutSlotRewriteVersion(
         return {
             kind: "object",
             state: {
-                fields: {
-                    ...parent.state.fields,
+                items: {
+                    ...parent.state.items,
                     [field]: {
                         node: child,
-                        slotVersion: null,
+                        version: null,
                     },
                 },
             },
@@ -261,55 +189,9 @@ function replaceObjectChildWithoutSlotRewriteVersion(
     return {
         kind: "object",
         state: {
-            fields: {
-                ...parent.state.fields,
+            items: {
+                ...parent.state.items,
                 [field]: {
-                    ...existing,
-                    node: child,
-                },
-            },
-        },
-    };
-}
-
-function replaceMapChildWithoutEntryRewriteVersion(
-    parent: NodeState,
-    key: string,
-    child: NodeState | null,
-): NodeState {
-    if (!isMapNodeState(parent)) {
-        throw new Error(
-            `replaceMapChildWithoutEntryRewriteVersion expects map node, got "${parent.kind}"`,
-        );
-    }
-
-    const existing = getMapEntry(parent.state, key);
-
-    if (existing === null) {
-        if (child === null) {
-            return parent;
-        }
-
-        return {
-            kind: "map",
-            state: {
-                entries: {
-                    ...parent.state.entries,
-                    [key]: {
-                        node: child,
-                        entryVersion: null,
-                    },
-                },
-            },
-        };
-    }
-
-    return {
-        kind: "map",
-        state: {
-            entries: {
-                ...parent.state.entries,
-                [key]: {
                     ...existing,
                     node: child,
                 },
@@ -331,69 +213,8 @@ function replaceChildInContainerWithoutRewriteVersion(
         );
     }
 
-    if (isMapNodeState(container)) {
-        return replaceMapChildWithoutEntryRewriteVersion(
-            container,
-            segment,
-            child,
-        );
-    }
-
     throw new Error(
         `Cannot technically rewrite child in node kind "${container.kind}"`,
-    );
-}
-
-/* ============================================================================
- * Path helpers
- * ========================================================================== */
-
-function assertStringPath(path: ObjectPath): string[] {
-    for (const segment of path) {
-        if (typeof segment !== "string") {
-            throw new Error(
-                `MVP apply.ts only supports string path segments for traversal. Got: ${String(
-                    segment,
-                )}`,
-            );
-        }
-    }
-
-    return path as string[];
-}
-
-function splitParentPath(path: ObjectPath): {
-    parentPath: string[];
-    lastSegment: string;
-} {
-    const normalized = assertStringPath(path);
-
-    if (normalized.length === 0) {
-        throw new Error("Path must not be empty");
-    }
-
-    return {
-        parentPath: normalized.slice(0, -1),
-        lastSegment: normalized[normalized.length - 1]!,
-    };
-}
-
-function getChildFromContainer(
-    container: NodeState,
-    segment: string,
-): NodeState | null {
-    if (isObjectNodeState(container)) {
-        const slot = getObjectField(container.state, segment);
-        return slot?.node ?? null;
-    }
-
-    if (isMapNodeState(container)) {
-        const entry = getMapEntry(container.state, segment);
-        return entry?.node ?? null;
-    }
-
-    throw new Error(
-        `Cannot traverse through node kind "${container.kind}" using string segment "${segment}"`,
     );
 }
 
@@ -453,48 +274,29 @@ function rewriteChildSlotOnContainer(
     metadata: ApplyMetadata,
     rewriter: SlotRewriter,
 ): NodeState {
-    if (!isObjectNodeState(parent) && !isMapNodeState(parent)) {
+    if (!isObjectNodeState(parent)) {
         throw new Error(
-            `Parent path must resolve to object or map. Got "${parent.kind}"`,
+            `Parent path must resolve to object. Got "${parent.kind}"`,
         );
     }
 
     const existing = getChildFromContainer(parent, segment);
     const next = rewriter(existing);
 
-    if (isObjectNodeState(parent)) {
-        return {
-            kind: "object",
-            state:
-                next !== null
-                    ? setObjectField(
-                        parent.state,
-                        segment,
-                        next,
-                        createObjectSlotVersionFromMetadata(metadata),
-                    )
-                    : deleteObjectField(
-                        parent.state,
-                        segment,
-                        createObjectSlotVersionFromMetadata(metadata),
-                    ),
-        };
-    }
-
     return {
-        kind: "map",
+        kind: "object",
         state:
             next !== null
-                ? setMapEntry(
+                ? setObjectField(
                     parent.state,
                     segment,
                     next,
-                    createMapEntryVersionFromMetadata(metadata),
+                    createVersionStampFromMetadata(metadata),
                 )
-                : deleteMapEntry(
+                : deleteObjectField(
                     parent.state,
                     segment,
-                    createMapEntryVersionFromMetadata(metadata),
+                    createVersionStampFromMetadata(metadata),
                 ),
     };
 }
@@ -560,122 +362,28 @@ function applyNodeInit(
     root: NodeState,
     action:
         | InitObjectAction
-        | InitMapAction
         | InitSetAction
         | InitArrayAction,
-    kind: ContainerInitKind,
+    kind: ContainerNodeKind,
     metadata: ApplyMetadata,
 ): NodeState {
-    return rewriteSlotAtPath(root, action.path, metadata, () => createContainerNode(kind));
-}
-
-/* ============================================================================
- * Action application: map.*
- * ========================================================================== */
-
-function applyMapSetValue(
-    root: NodeState,
-    action: MapSetValueAction,
-    metadata: ApplyMetadata,
-    context: ApplyContext,
-): NodeState {
-    return rewriteExistingNodeAtPath(root, action.path, (target) => {
-        if (!isMapNodeState(target)) {
-            throw new Error(`map.setValue expects map node, got "${target.kind}"`);
-        }
-
-        const existingEntry = getMapEntry(target.state, action.key);
-        const existingChild = existingEntry?.node ?? null;
-        const child = existingChild ?? createLeafNodeFromValue(action.value, context);
-
-        let nextChild: NodeState;
-
-        if (isPrimitiveNodeState(child)) {
-            if (isRefValue(action.value)) {
-                throw new Error("Cannot write ref value into primitive register");
+    return rewriteSlotAtPath(root, action.path, metadata, (existing) => {
+        if (existing !== null) {
+            if (
+                (kind === "object" && isObjectNodeState(existing)) ||
+                (kind === "set" && isSetNodeState(existing)) ||
+                (kind === "array" && isArrayNodeState(existing))
+            ) {
+                return existing;
             }
 
-            nextChild = {
-                kind: "primitive",
-                semantics: child.semantics,
-                state: addRegisterVersion(
-                    child.state,
-                    createRegisterVersionFromMetadata(action.value, metadata),
-                ),
-            };
-        } else if (isRefNodeState(child)) {
-            if (!isRefValue(action.value)) {
-                throw new Error("Cannot write primitive value into ref register");
-            }
-
-            nextChild = {
-                kind: "ref",
-                semantics: child.semantics,
-                state: addRegisterVersion(
-                    child.state,
-                    createRegisterVersionFromMetadata(action.value, metadata),
-                ),
-            };
-        } else {
             throw new Error(
-                `map.setValue can only target leaf entries, got "${child.kind}" at key "${action.key}"`,
+                `Cannot initialize ${kind} node at path "${action.path.join(".")}": ` +
+                `slot already contains "${existing.kind}"`,
             );
         }
 
-        return {
-            kind: "map",
-            state: setMapEntry(
-                target.state,
-                action.key,
-                nextChild,
-                createMapEntryVersionFromMetadata(metadata),
-            ),
-        };
-    });
-}
-
-function applyMapInitEntry(
-    root: NodeState,
-    action: MapInitEntryAction,
-    metadata: ApplyMetadata,
-): NodeState {
-    return rewriteExistingNodeAtPath(root, action.path, (target) => {
-        if (!isMapNodeState(target)) {
-            throw new Error(`map.initEntry expects map node, got "${target.kind}"`);
-        }
-
-        const child = createContainerNode(action.nodeKind);
-
-        return {
-            kind: "map",
-            state: setMapEntry(
-                target.state,
-                action.key,
-                child,
-                createMapEntryVersionFromMetadata(metadata),
-            ),
-        };
-    });
-}
-
-function applyMapDelete(
-    root: NodeState,
-    action: MapDeleteAction,
-    metadata: ApplyMetadata,
-): NodeState {
-    return rewriteExistingNodeAtPath(root, action.path, (target) => {
-        if (!isMapNodeState(target)) {
-            throw new Error(`map.delete expects map node, got "${target.kind}"`);
-        }
-
-        return {
-            kind: "map",
-            state: deleteMapEntry(
-                target.state,
-                action.key,
-                createMapEntryVersionFromMetadata(metadata),
-            ),
-        };
+        return createContainerNode(kind);
     });
 }
 
@@ -697,8 +405,7 @@ function applySetAdd(
             value: action.value,
             tag: metadata.opId,
             replicaId: metadata.replicaId,
-            clock: {...metadata.clock},
-            timestamp: metadata.timestamp,
+            clock: {...metadata.clock}
         };
 
         return {
@@ -722,16 +429,14 @@ function applySetRemove(
             value: action.value,
             opId: metadata.opId,
             replicaId: metadata.replicaId,
-            clock: {...metadata.clock},
-            timestamp: metadata.timestamp,
+            clock: {...metadata.clock}
         };
 
         return {
             kind: "set",
             state: removeSetValue(target.state, removeInput, {
                 equals: areLeafValuesEqual,
-                compare: compareLeafValues,
-            }),
+            })
         };
     });
 }
@@ -801,7 +506,7 @@ function applyArrayInsert(
             elementId: metadata.opId,
             afterElementId,
             node: initializedChild,
-            insertVersion: createArrayElementVersionFromMetadata(metadata),
+            insertVersion: createVersionStampFromMetadata(metadata),
             deleteVersion: null,
         };
 
@@ -841,48 +546,8 @@ function applyArrayRemove(
             state: deleteArrayElement(
                 target.state,
                 elementId,
-                createArrayElementVersionFromMetadata(metadata),
+                createVersionStampFromMetadata(metadata),
             ),
         };
     });
 }
-
-/* ============================================================================
- * Leaf value equality / ordering
- * ========================================================================== */
-
-function areLeafValuesEqual(left: LeafValue, right: LeafValue): boolean {
-    if (isRefValue(left) && isRefValue(right)) {
-        return left.objectId === right.objectId;
-    }
-
-    if (isRefValue(left) || isRefValue(right)) {
-        return false;
-    }
-
-    return left === right;
-}
-
-function compareLeafValues(left: LeafValue, right: LeafValue): number {
-    const leftKey = leafValueSortKey(left);
-    const rightKey = leafValueSortKey(right);
-
-    if (leftKey < rightKey) {
-        return -1;
-    }
-
-    if (leftKey > rightKey) {
-        return 1;
-    }
-
-    return 0;
-}
-
-function leafValueSortKey(value: LeafValue): string {
-    if (isRefValue(value)) {
-        return `ref:${value.objectId ?? "null"}`;
-    }
-
-    return `${typeof value}:${String(value)}`;
-}
-
