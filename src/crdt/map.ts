@@ -1,12 +1,9 @@
-import {type ClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../core/clock";
-import type {OpId} from "../ops/operation";
+import {cloneVersionStamp, compareVersionStamps, VersionStamp} from "./version";
 
-export interface MapEntryVersion {
-    opId: OpId;
-    replicaId: ReplicaId;
-    clock: VectorClock;
-    timestamp?: string;
-}
+export type MapEntryVersion = VersionStamp;
+
+export const createMapEntryVersion = cloneVersionStamp;
+export const compareMapEntryVersions = compareVersionStamps;
 
 export interface MapEntryState<TNode> {
     /**
@@ -34,40 +31,6 @@ export function createMapState<TNode>(): MapState<TNode> {
     return {
         entries: {},
     };
-}
-
-export function createMapEntryVersion(
-    input: MapEntryVersion,
-): MapEntryVersion {
-    return {
-        ...input,
-        clock: {...input.clock},
-    };
-}
-
-export function compareMapEntryVersions(
-    a: MapEntryVersion,
-    b: MapEntryVersion,
-): number {
-    if (a.opId === b.opId) {
-        return 0;
-    }
-
-    const relation: ClockRelation = compareClocks(a.clock, b.clock);
-
-    if (relation === "before") {
-        return -1;
-    }
-
-    if (relation === "after") {
-        return 1;
-    }
-
-    if (a.replicaId !== b.replicaId) {
-        return a.replicaId < b.replicaId ? -1 : 1;
-    }
-
-    return a.opId < b.opId ? -1 : 1;
 }
 
 export function getMapEntry<TNode>(

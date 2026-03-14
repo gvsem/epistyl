@@ -10,7 +10,6 @@ import {
     mergeClocks,
     observeClock,
     setClockValue,
-    tickClock,
     type ClockState,
     type VectorClock,
 } from "../../src/core/clock";
@@ -74,25 +73,6 @@ describe("core/clock", () => {
             const next = setClockValue(original, "B", 7);
 
             expect(next).toEqual({ A: 1, B: 7 });
-        });
-    });
-
-    describe("tickClock", () => {
-        it("increments existing replica value", () => {
-            const clock: VectorClock = { A: 2, B: 4 };
-
-            const next = tickClock(clock, "A");
-
-            expect(next).toEqual({ A: 3, B: 4 });
-            expect(clock).toEqual({ A: 2, B: 4 });
-        });
-
-        it("starts missing replica value from 1", () => {
-            const clock: VectorClock = { A: 2 };
-
-            const next = tickClock(clock, "B");
-
-            expect(next).toEqual({ A: 2, B: 1 });
         });
     });
 
@@ -170,8 +150,8 @@ describe("core/clock", () => {
 
             const issued = issueClock(state);
 
-            expect(issued.counter).toBe(3);
-            expect(issued.clock).toEqual({ A: 3, B: 5 });
+            expect(issued.state.counter).toBe(3);
+            expect(issued.state.clock).toEqual({ A: 3, B: 5 });
             expect(issued.state).toEqual({
                 replicaId: "A",
                 clock: { A: 3, B: 5 },
@@ -195,7 +175,7 @@ describe("core/clock", () => {
             });
 
             expect(issued.state).not.toBe(state);
-            expect(issued.clock).not.toBe(state.clock);
+            expect(issued.state.clock).not.toBe(state.clock);
         });
 
         it("starts local component from 1 when missing", () => {
@@ -207,8 +187,8 @@ describe("core/clock", () => {
 
             const issued = issueClock(state);
 
-            expect(issued.clock).toEqual({ A: 1, B: 4 });
-            expect(issued.counter).toBe(1);
+            expect(issued.state.clock).toEqual({ A: 1, B: 4 });
+            expect(issued.state.counter).toBe(1);
         });
     });
 

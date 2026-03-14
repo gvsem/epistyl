@@ -1,12 +1,9 @@
-import {type ClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../core/clock";
-import type {OpId} from "../ops/operation";
+import {cloneVersionStamp, compareVersionStamps, VersionStamp} from "./version";
 
-export interface ArrayElementVersion {
-    opId: OpId;
-    replicaId: ReplicaId;
-    clock: VectorClock;
-    timestamp?: string;
-}
+export type ArrayElementVersion = VersionStamp;
+
+export const createArrayElementVersion = cloneVersionStamp;
+export const compareArrayElementVersions = compareVersionStamps;
 
 export interface ArrayElementState<TNode> {
     elementId: string;
@@ -28,40 +25,6 @@ export function createArrayState<TNode>(): ArrayState<TNode> {
     return {
         elements: {},
     };
-}
-
-export function createArrayElementVersion(
-    input: ArrayElementVersion,
-): ArrayElementVersion {
-    return {
-        ...input,
-        clock: {...input.clock},
-    };
-}
-
-export function compareArrayElementVersions(
-    a: ArrayElementVersion,
-    b: ArrayElementVersion,
-): number {
-    if (a.opId === b.opId) {
-        return 0;
-    }
-
-    const relation: ClockRelation = compareClocks(a.clock, b.clock);
-
-    if (relation === "before") {
-        return -1;
-    }
-
-    if (relation === "after") {
-        return 1;
-    }
-
-    if (a.replicaId !== b.replicaId) {
-        return a.replicaId < b.replicaId ? -1 : 1;
-    }
-
-    return a.opId < b.opId ? -1 : 1;
 }
 
 export function getArrayElement<TNode>(

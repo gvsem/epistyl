@@ -1,12 +1,9 @@
-import {type ClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../core/clock";
-import type {OpId} from "../ops/operation";
+import {cloneVersionStamp, compareVersionStamps, VersionStamp} from "./version";
 
-export interface ObjectSlotVersion {
-    opId: OpId;
-    replicaId: ReplicaId;
-    clock: VectorClock;
-    timestamp?: string;
-}
+export type ObjectSlotVersion = VersionStamp;
+
+export const createObjectSlotVersion = cloneVersionStamp;
+export const compareObjectSlotVersions = compareVersionStamps;
 
 export interface ObjectFieldState<TNode> {
     /**
@@ -34,40 +31,6 @@ export function createObjectState<TNode>(): ObjectState<TNode> {
     return {
         fields: {},
     };
-}
-
-export function createObjectSlotVersion(
-    input: ObjectSlotVersion,
-): ObjectSlotVersion {
-    return {
-        ...input,
-        clock: {...input.clock},
-    };
-}
-
-export function compareObjectSlotVersions(
-    a: ObjectSlotVersion,
-    b: ObjectSlotVersion,
-): number {
-    if (a.opId === b.opId) {
-        return 0;
-    }
-
-    const relation: ClockRelation = compareClocks(a.clock, b.clock);
-
-    if (relation === "before") {
-        return -1;
-    }
-
-    if (relation === "after") {
-        return 1;
-    }
-
-    if (a.replicaId !== b.replicaId) {
-        return a.replicaId < b.replicaId ? -1 : 1;
-    }
-
-    return a.opId < b.opId ? -1 : 1;
 }
 
 export function getObjectField<TNode>(

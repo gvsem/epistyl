@@ -1,9 +1,8 @@
 import type { PrimitiveValue, RefValue } from "../ops/action";
-import type { RegisterSemantics } from "./model";
 
 import {
     createRegisterState,
-    mergeRegisterStates,
+    mergeRegisterStates, RegisterSemantics,
     type RegisterState,
 } from "./register";
 

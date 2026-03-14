@@ -21,9 +21,8 @@ import type {
 import type {Operation, OpId} from "../ops/operation";
 
 import type {ReplicaId, VectorClock} from "../core/clock";
-import type {RegisterSemantics} from "../crdt/model";
 
-import {addRegisterVersion, type RegisterVersion,} from "../crdt/register";
+import {addRegisterVersion, RegisterSemantics, type RegisterVersion,} from "../crdt/register";
 
 import {deleteObjectField, getObjectField, type ObjectSlotVersion, setObjectField,} from "../crdt/object";
 

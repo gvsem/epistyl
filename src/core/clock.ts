@@ -39,14 +39,6 @@ export function setClockValue(
     };
 }
 
-export function tickClock(
-    clock: VectorClock,
-    replicaId: ReplicaId,
-): VectorClock {
-    const nextValue = getClockValue(clock, replicaId) + 1;
-    return setClockValue(clock, replicaId, nextValue);
-}
-
 export function mergeClocks(
     a: VectorClock,
     b: VectorClock,
@@ -105,6 +97,7 @@ export function compareClocks(
 
     return "concurrent";
 }
+
 export function createClockState(
     replicaId: ReplicaId,
 ): ClockState {
@@ -116,9 +109,7 @@ export function createClockState(
 }
 
 export function issueClock(state: ClockState): {
-    state: ClockState;
-    clock: VectorClock;
-    counter: number;
+    state: ClockState
 } {
     const nextCounter = state.counter + 1;
     const nextClock = {
@@ -131,9 +122,7 @@ export function issueClock(state: ClockState): {
             replicaId: state.replicaId,
             clock: nextClock,
             counter: nextCounter,
-        },
-        clock: nextClock,
-        counter: nextCounter,
+        }
     };
 }
 
