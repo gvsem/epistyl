@@ -37,7 +37,7 @@ export interface Operation {
     action: Action;
 }
 
-function parseOperationCounter(opId: OperationId): number | null {
+function getOperationCounterFromId(opId: OperationId): number | null {
     const parts = opId.split(":");
     const last = parts[parts.length - 1];
     if (!last) {
@@ -68,8 +68,8 @@ export function compareOperations(a: Operation, b: Operation): number {
         return a.replicaId < b.replicaId ? -1 : 1;
     }
 
-    const aCounter = parseOperationCounter(a.operationId);
-    const bCounter = parseOperationCounter(b.operationId);
+    const aCounter = getOperationCounterFromId(a.operationId);
+    const bCounter = getOperationCounterFromId(b.operationId);
 
     if (aCounter !== null && bCounter !== null && aCounter !== bCounter) {
         return aCounter - bCounter;
