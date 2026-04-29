@@ -1,6 +1,6 @@
-import {ClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
+import {PartialOrderClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
 import type {OpId} from "../ops/operation";
-import {compareVersionStamps} from "./version";
+import {compareCausalVersionStamps} from "./version";
 
 export type RegisterSemantics =
     | "lww"
@@ -41,7 +41,7 @@ export function createRegisterState<T>(
     };
 }
 
-export const compareRegisterVersionsForLww = compareVersionStamps
+export const compareRegisterVersionsForLww = compareCausalVersionStamps
 
 export function sortRegisterVersions<T>(
     versions: readonly RegisterVersion<T>[],
@@ -65,11 +65,11 @@ function joinRegisterVersions<T>(
 
         const relation = compareClocks(existing.clock, incoming.clock);
 
-        if (relation === ClockRelation.BEFORE) {
+        if (relation === PartialOrderClockRelation.BEFORE) {
             continue;
         }
 
-        if (relation === ClockRelation.AFTER) {
+        if (relation === PartialOrderClockRelation.AFTER) {
             next.push(existing);
             shouldInsertIncoming = false;
             continue;

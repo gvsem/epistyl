@@ -27,68 +27,68 @@ export function createCalendarInitialRoot(): NodeState {
     const locationNode = createObjectNodeState();
     locationNode.state.items["room"] = {
         node: createPrimitiveNodeState("lww"),
-        version: null,
+        causalVersionStamp: null,
     };
     locationNode.state.items["building"] = {
         node: createPrimitiveNodeState("lww"),
-        version: null,
+        causalVersionStamp: null,
     };
 
     const metadataNode = createObjectNodeState();
     metadataNode.state.items["color"] = {
         node: createPrimitiveNodeState("lww"),
-        version: null,
+        causalVersionStamp: null,
     };
     metadataNode.state.items["note"] = {
         node: createPrimitiveNodeState("mv"),
-        version: null,
+        causalVersionStamp: null,
     };
 
     const root = createObjectNodeState();
 
     root.state.items["title"] = {
         node: createPrimitiveNodeState("mv"),
-        version: null,
+        causalVersionStamp: null,
     };
 
     root.state.items["description"] = {
         node: createPrimitiveNodeState("lww"),
-        version: null,
+        causalVersionStamp: null,
     };
 
     root.state.items["startAt"] = {
         node: createPrimitiveNodeState("lww"),
-        version: null,
+        causalVersionStamp: null,
     };
 
     root.state.items["endAt"] = {
         node: createPrimitiveNodeState("lww"),
-        version: null,
+        causalVersionStamp: null,
     };
 
     root.state.items["organizer"] = {
         node: createRefNodeState("lww"),
-        version: null,
+        causalVersionStamp: null,
     };
 
     root.state.items["location"] = {
         node: locationNode,
-        version: null,
+        causalVersionStamp: null,
     };
 
     root.state.items["tags"] = {
         node: createSetNodeState(),
-        version: null,
+        causalVersionStamp: null,
     };
 
     root.state.items["attendees"] = {
         node: createArrayNodeState(),
-        version: null,
+        causalVersionStamp: null,
     };
 
     root.state.items["metadata"] = {
         node: metadataNode,
-        version: null,
+        causalVersionStamp: null,
     };
 
     return root;

@@ -2,11 +2,11 @@ import {describe, expect, it} from "vitest";
 
 import {
     type ArrayElementState,
-    type ArrayElementVersion,
+    type ArrayElementCausalVersionStamp,
     type ArrayNodeAdapter,
     type ArrayState,
-    compareArrayElementVersions,
-    createArrayElementVersion,
+    compareArrayElementCausalVersionStamps,
+    createArrayElementCausalVersionStamp,
     createArrayState,
     deleteArrayElement,
     findVisibleElementIdAtIndex,
@@ -33,7 +33,7 @@ function version(
     opId: string,
     replicaId: string,
     clock: Record<string, number>,
-): ArrayElementVersion {
+): ArrayElementCausalVersionStamp {
     return {
         opId,
         replicaId,
@@ -45,8 +45,8 @@ function element(
     elementId: string,
     afterElementId: string | null,
     nodeValue: string | null,
-    insertVersion: ArrayElementVersion,
-    deleteVersion: ArrayElementVersion | null = null,
+    insertVersion: ArrayElementCausalVersionStamp,
+    deleteVersion: ArrayElementCausalVersionStamp | null = null,
 ): ArrayElementState<TestNode> {
     return {
         elementId,
@@ -69,7 +69,7 @@ describe("crdt/array", () => {
     describe("createArrayElementVersion", () => {
         it("clones the clock object", () => {
             const input = version("A:1", "A", {A: 1});
-            const created = createArrayElementVersion(input);
+            const created = createArrayElementCausalVersionStamp(input);
 
             expect(created).toEqual(input);
             expect(created).not.toBe(input);
@@ -82,31 +82,31 @@ describe("crdt/array", () => {
             const a = version("A:1", "A", {A: 1});
             const b = version("A:1", "A", {A: 999});
 
-            expect(compareArrayElementVersions(a, b)).toBe(0);
+            expect(compareArrayElementCausalVersionStamps(a, b)).toBe(0);
         });
 
         it("orders causally earlier version before later version", () => {
             const earlier = version("A:1", "A", {A: 1});
             const later = version("A:2", "A", {A: 2});
 
-            expect(compareArrayElementVersions(earlier, later)).toBeLessThan(0);
-            expect(compareArrayElementVersions(later, earlier)).toBeGreaterThan(0);
+            expect(compareArrayElementCausalVersionStamps(earlier, later)).toBeLessThan(0);
+            expect(compareArrayElementCausalVersionStamps(later, earlier)).toBeGreaterThan(0);
         });
 
         it("uses replicaId as tie-breaker for concurrent versions", () => {
             const a = version("A:1", "A", {A: 1});
             const b = version("B:1", "B", {B: 1});
 
-            expect(compareArrayElementVersions(a, b)).toBeLessThan(0);
-            expect(compareArrayElementVersions(b, a)).toBeGreaterThan(0);
+            expect(compareArrayElementCausalVersionStamps(a, b)).toBeLessThan(0);
+            expect(compareArrayElementCausalVersionStamps(b, a)).toBeGreaterThan(0);
         });
 
         it("uses opId as final tie-breaker when replicaId is the same", () => {
             const a = version("A:1", "A", {A: 1, B: 1});
             const b = version("A:2", "A", {A: 1, B: 1});
 
-            expect(compareArrayElementVersions(a, b)).toBeLessThan(0);
-            expect(compareArrayElementVersions(b, a)).toBeGreaterThan(0);
+            expect(compareArrayElementCausalVersionStamps(a, b)).toBeLessThan(0);
+            expect(compareArrayElementCausalVersionStamps(b, a)).toBeGreaterThan(0);
         });
     });
 

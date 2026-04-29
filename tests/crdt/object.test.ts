@@ -6,7 +6,7 @@ import {
     getObjectField,
     hasObjectField,
     listObjectFields, ObjectEntryState,
-    type ObjectState, ObjectVersion,
+    type ObjectState, ObjectCausalVersionStamp,
     setObjectField,
 } from "../../src/crdt/object";
 
@@ -17,7 +17,7 @@ function version(
     opId: string,
     replicaId: string,
     clock: Record<string, number>,
-): ObjectVersion {
+): ObjectCausalVersionStamp {
     return {
         opId,
         replicaId,
@@ -27,11 +27,11 @@ function version(
 
 function fieldState(
     nodeValue: string | null,
-    version: ObjectVersion | null,
+    version: ObjectCausalVersionStamp | null,
 ): ObjectEntryState<TestNode> {
     return {
         node: nodeValue === null ? null : {value: nodeValue},
-        version,
+        causalVersionStamp: version,
     };
 }
 
@@ -118,7 +118,7 @@ describe("crdt/object", () => {
                 items: {
                     title: {
                         node: {value: "Team Sync"},
-                        version: version("A:1", "A", {A: 1}),
+                        causalVersionStamp: version("A:1", "A", {A: 1}),
                     },
                 },
             });
@@ -142,7 +142,7 @@ describe("crdt/object", () => {
 
             expect(next.items.title).toEqual({
                 node: {value: "New"},
-                version: version("A:2", "A", {A: 2}),
+                causalVersionStamp: version("A:2", "A", {A: 2}),
             });
         });
     });
@@ -163,7 +163,7 @@ describe("crdt/object", () => {
 
             expect(next.items.title).toEqual({
                 node: null,
-                version: version("A:2", "A", {A: 2}),
+                causalVersionStamp: version("A:2", "A", {A: 2}),
             });
         });
 
@@ -178,7 +178,7 @@ describe("crdt/object", () => {
 
             expect(next.items.missing).toEqual({
                 node: null,
-                version: version("A:1", "A", {A: 1}),
+                causalVersionStamp: version("A:1", "A", {A: 1}),
             });
         });
     });

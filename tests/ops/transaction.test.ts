@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createClockState, issueClock, type ClockState } from "../../src/clock/clock";
+import { createReplicaClockState, tickClock, type ReplicaClockState } from "../../src/clock/clock";
 import {
     createTransactionBuilder,
     type IssuedOperationMetadata,
@@ -10,15 +10,15 @@ import {Operation} from "../../src/ops/operation";
 
 function createBuildContext(replicaId = "A"): {
     context: TransactionBuildContext;
-    getClockState(): ClockState;
+    getClockState(): ReplicaClockState;
 } {
-    let state = createClockState(replicaId);
+    let state = createReplicaClockState(replicaId);
 
     return {
         context: {
             replicaId,
             issueOperationMetadata(): IssuedOperationMetadata {
-                const issued = issueClock(state);
+                const issued = tickClock(state);
                 state = issued.state;
 
                 return {
@@ -27,7 +27,7 @@ function createBuildContext(replicaId = "A"): {
                 };
             },
         },
-        getClockState(): ClockState {
+        getClockState(): ReplicaClockState {
             return state;
         },
     };

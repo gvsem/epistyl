@@ -1,16 +1,16 @@
-import {cloneVersionStamp, compareVersionStamps, VersionStamp} from "./version";
+import {cloneCausalVersionStamp, compareCausalVersionStamps, CausalVersionStamp} from "./version";
 
-export type ArrayElementVersion = VersionStamp;
+export type ArrayElementCausalVersionStamp = CausalVersionStamp;
 
-export const createArrayElementVersion = cloneVersionStamp;
-export const compareArrayElementVersions = compareVersionStamps;
+export const createArrayElementCausalVersionStamp = cloneCausalVersionStamp;
+export const compareArrayElementCausalVersionStamps = compareCausalVersionStamps;
 
 export interface ArrayElementState<TNode> {
     elementId: string;
     afterElementId: string | null;
     node: TNode | null;
-    insertVersion: ArrayElementVersion;
-    deleteVersion: ArrayElementVersion | null;
+    insertVersion: ArrayElementCausalVersionStamp;
+    deleteVersion: ArrayElementCausalVersionStamp | null;
 }
 
 export interface ArrayState<TNode> {
@@ -54,7 +54,7 @@ export function mergeArrayElementStates<TNode>(
     }
 
     const insertWinner =
-        compareArrayElementVersions(left.insertVersion, right.insertVersion) >= 0
+        compareArrayElementCausalVersionStamps(left.insertVersion, right.insertVersion) >= 0
             ? left
             : right;
 
@@ -66,24 +66,24 @@ export function mergeArrayElementStates<TNode>(
         mergedNode = left.node ?? right.node;
     }
 
-    let mergedDeleteVersion: ArrayElementVersion | null = null;
+    let mergedDeleteVersion: ArrayElementCausalVersionStamp | null = null;
 
     if (left.deleteVersion !== null && right.deleteVersion !== null) {
         mergedDeleteVersion =
-            compareArrayElementVersions(left.deleteVersion, right.deleteVersion) >= 0
-                ? createArrayElementVersion(left.deleteVersion)
-                : createArrayElementVersion(right.deleteVersion);
+            compareArrayElementCausalVersionStamps(left.deleteVersion, right.deleteVersion) >= 0
+                ? createArrayElementCausalVersionStamp(left.deleteVersion)
+                : createArrayElementCausalVersionStamp(right.deleteVersion);
     } else if (left.deleteVersion !== null) {
-        mergedDeleteVersion = createArrayElementVersion(left.deleteVersion);
+        mergedDeleteVersion = createArrayElementCausalVersionStamp(left.deleteVersion);
     } else if (right.deleteVersion !== null) {
-        mergedDeleteVersion = createArrayElementVersion(right.deleteVersion);
+        mergedDeleteVersion = createArrayElementCausalVersionStamp(right.deleteVersion);
     }
 
     return {
         elementId: insertWinner.elementId,
         afterElementId: insertWinner.afterElementId,
         node: mergedNode,
-        insertVersion: createArrayElementVersion(insertWinner.insertVersion),
+        insertVersion: createArrayElementCausalVersionStamp(insertWinner.insertVersion),
         deleteVersion: mergedDeleteVersion,
     };
 }
@@ -111,20 +111,20 @@ export function insertArrayElement<TNode>(
 export function deleteArrayElement<TNode>(
     state: ArrayState<TNode>,
     elementId: string,
-    deleteVersion: ArrayElementVersion,
+    deleteVersion: ArrayElementCausalVersionStamp,
 ): ArrayState<TNode> {
     const existing = state.elements[elementId];
     if (!existing) {
         return state;
     }
 
-    let nextDeleteVersion = createArrayElementVersion(deleteVersion);
+    let nextDeleteVersion = createArrayElementCausalVersionStamp(deleteVersion);
 
     if (
         existing.deleteVersion !== null &&
-        compareArrayElementVersions(existing.deleteVersion, nextDeleteVersion) > 0
+        compareArrayElementCausalVersionStamps(existing.deleteVersion, nextDeleteVersion) > 0
     ) {
-        nextDeleteVersion = createArrayElementVersion(existing.deleteVersion);
+        nextDeleteVersion = createArrayElementCausalVersionStamp(existing.deleteVersion);
     }
 
     return {
@@ -158,7 +158,7 @@ function buildChildrenIndex<TNode>(
 
     for (const children of byParent.values()) {
         children.sort((a, b) =>
-            compareArrayElementVersions(a.insertVersion, b.insertVersion),
+            compareArrayElementCausalVersionStamps(a.insertVersion, b.insertVersion),
         );
     }
 

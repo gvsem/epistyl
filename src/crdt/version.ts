@@ -1,34 +1,34 @@
-import { compareClocks, ClockRelation, type ReplicaId, type VectorClock } from "../clock/clock";
+import { compareClocks, PartialOrderClockRelation, type ReplicaId, type VectorClock } from "../clock/clock";
 import type { OpId } from "../ops/operation";
 
-export interface VersionStamp {
+export interface CausalVersionStamp {
     opId: OpId;
     replicaId: ReplicaId;
     clock: VectorClock;
 }
 
-export function cloneVersionStamp<T extends VersionStamp>(input: T): T {
+export function cloneCausalVersionStamp<T extends CausalVersionStamp>(input: T): T {
     return {
         ...input,
         clock: { ...input.clock },
     };
 }
 
-export function compareVersionStamps(
-    a: VersionStamp,
-    b: VersionStamp,
+export function compareCausalVersionStamps(
+    a: CausalVersionStamp,
+    b: CausalVersionStamp,
 ): number {
     if (a.opId === b.opId) {
         return 0;
     }
 
-    const relation: ClockRelation = compareClocks(a.clock, b.clock);
+    const relation: PartialOrderClockRelation = compareClocks(a.clock, b.clock);
 
-    if (relation === ClockRelation.BEFORE) {
+    if (relation === PartialOrderClockRelation.BEFORE) {
         return -1;
     }
 
-    if (relation === ClockRelation.AFTER) {
+    if (relation === PartialOrderClockRelation.AFTER) {
         return 1;
     }
 

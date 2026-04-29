@@ -2,14 +2,14 @@ import { describe, it, expect } from "vitest";
 
 import {
     compareClocks,
-    createClockState,
+    createReplicaClockState,
     getClockValue,
-    issueClock,
+    tickClock,
     mergeClocks,
-    observeClock,
+    acceptClock,
     setClockValue,
-    type ClockState,
-    type VectorClock, ClockRelation,
+    type ReplicaClockState,
+    type VectorClock, PartialOrderClockRelation,
 } from "../../src/clock/clock";
 
 describe("clock/clock", () => {
@@ -76,35 +76,35 @@ describe("clock/clock", () => {
 
     describe("compareClocks", () => {
         it("returns equal for identical clocks", () => {
-            expect(compareClocks({ A: 1, B: 2 }, { A: 1, B: 2 })).toBe(ClockRelation.EQUAL);
+            expect(compareClocks({ A: 1, B: 2 }, { A: 1, B: 2 })).toBe(PartialOrderClockRelation.EQUAL);
         });
 
         it("returns equal when missing replicas are equivalent to zero", () => {
-            expect(compareClocks({}, { A: 0 })).toBe(ClockRelation.EQUAL);
-            expect(compareClocks({ A: 1 }, { A: 1, B: 0 })).toBe(ClockRelation.EQUAL);
+            expect(compareClocks({}, { A: 0 })).toBe(PartialOrderClockRelation.EQUAL);
+            expect(compareClocks({ A: 1 }, { A: 1, B: 0 })).toBe(PartialOrderClockRelation.EQUAL);
         });
 
         it("returns before when left is causally earlier", () => {
-            expect(compareClocks({ A: 1 }, { A: 2 })).toBe(ClockRelation.BEFORE);
-            expect(compareClocks({ A: 1, B: 2 }, { A: 1, B: 3 })).toBe(ClockRelation.BEFORE);
-            expect(compareClocks({ A: 1 }, { A: 1, B: 1 })).toBe(ClockRelation.BEFORE);
+            expect(compareClocks({ A: 1 }, { A: 2 })).toBe(PartialOrderClockRelation.BEFORE);
+            expect(compareClocks({ A: 1, B: 2 }, { A: 1, B: 3 })).toBe(PartialOrderClockRelation.BEFORE);
+            expect(compareClocks({ A: 1 }, { A: 1, B: 1 })).toBe(PartialOrderClockRelation.BEFORE);
         });
 
         it("returns after when left is causally later", () => {
-            expect(compareClocks({ A: 3 }, { A: 2 })).toBe(ClockRelation.AFTER);
-            expect(compareClocks({ A: 1, B: 4 }, { A: 1, B: 3 })).toBe(ClockRelation.AFTER);
-            expect(compareClocks({ A: 1, B: 1 }, { A: 1 })).toBe(ClockRelation.AFTER);
+            expect(compareClocks({ A: 3 }, { A: 2 })).toBe(PartialOrderClockRelation.AFTER);
+            expect(compareClocks({ A: 1, B: 4 }, { A: 1, B: 3 })).toBe(PartialOrderClockRelation.AFTER);
+            expect(compareClocks({ A: 1, B: 1 }, { A: 1 })).toBe(PartialOrderClockRelation.AFTER);
         });
 
         it("returns concurrent when clocks are incomparable", () => {
-            expect(compareClocks({ A: 2, B: 1 }, { A: 1, B: 2 })).toBe(ClockRelation.CONCURRENT);
-            expect(compareClocks({ A: 3, C: 1 }, { A: 2, B: 5 })).toBe(ClockRelation.CONCURRENT);
+            expect(compareClocks({ A: 2, B: 1 }, { A: 1, B: 2 })).toBe(PartialOrderClockRelation.CONCURRENT);
+            expect(compareClocks({ A: 3, C: 1 }, { A: 2, B: 5 })).toBe(PartialOrderClockRelation.CONCURRENT);
         });
     });
 
     describe("createClockState", () => {
         it("creates initial state for replica", () => {
-            expect(createClockState("A")).toEqual({
+            expect(createReplicaClockState("A")).toEqual({
                 replicaId: "A",
                 clock: {},
                 counter: 0,
@@ -114,13 +114,13 @@ describe("clock/clock", () => {
 
     describe("issueClock", () => {
         it("increments local counter and local clock component", () => {
-            const state: ClockState = {
+            const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { A: 2, B: 5 },
                 counter: 2,
             };
 
-            const issued = issueClock(state);
+            const issued = tickClock(state);
 
             expect(issued.state.counter).toBe(3);
             expect(issued.state.clock).toEqual({ A: 3, B: 5 });
@@ -132,13 +132,13 @@ describe("clock/clock", () => {
         });
 
         it("does not mutate original state", () => {
-            const state: ClockState = {
+            const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { A: 1 },
                 counter: 1,
             };
 
-            const issued = issueClock(state);
+            const issued = tickClock(state);
 
             expect(state).toEqual({
                 replicaId: "A",
@@ -151,13 +151,13 @@ describe("clock/clock", () => {
         });
 
         it("starts local component from 1 when missing", () => {
-            const state: ClockState = {
+            const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { B: 4 },
                 counter: 0,
             };
 
-            const issued = issueClock(state);
+            const issued = tickClock(state);
 
             expect(issued.state.clock).toEqual({ A: 1, B: 4 });
             expect(issued.state.counter).toBe(1);
@@ -166,13 +166,13 @@ describe("clock/clock", () => {
 
     describe("observeClock", () => {
         it("merges observed clock into local knowledge", () => {
-            const state: ClockState = {
+            const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { A: 2, B: 1 },
                 counter: 2,
             };
 
-            const next = observeClock(state, { A: 1, B: 5, C: 3 });
+            const next = acceptClock(state, { A: 1, B: 5, C: 3 });
 
             expect(next).toEqual({
                 replicaId: "A",
@@ -182,13 +182,13 @@ describe("clock/clock", () => {
         });
 
         it("bumps local counter if observed clock knows a later local event", () => {
-            const state: ClockState = {
+            const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { A: 2, B: 1 },
                 counter: 2,
             };
 
-            const next = observeClock(state, { A: 7, B: 1 });
+            const next = acceptClock(state, { A: 7, B: 1 });
 
             expect(next).toEqual({
                 replicaId: "A",
@@ -198,13 +198,13 @@ describe("clock/clock", () => {
         });
 
         it("does not decrease local counter", () => {
-            const state: ClockState = {
+            const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { A: 5, B: 2 },
                 counter: 5,
             };
 
-            const next = observeClock(state, { A: 3, B: 10 });
+            const next = acceptClock(state, { A: 3, B: 10 });
 
             expect(next).toEqual({
                 replicaId: "A",
@@ -214,13 +214,13 @@ describe("clock/clock", () => {
         });
 
         it("works with empty observed clock", () => {
-            const state: ClockState = {
+            const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { A: 2 },
                 counter: 2,
             };
 
-            expect(observeClock(state, {})).toEqual({
+            expect(acceptClock(state, {})).toEqual({
                 replicaId: "A",
                 clock: { A: 2 },
                 counter: 2,

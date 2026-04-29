@@ -41,7 +41,7 @@ import {
     isSetNodeState,
     type NodeState,
 } from "../crdt/state";
-import {VersionStamp} from "../crdt/version";
+import {CausalVersionStamp} from "../crdt/version";
 import {assertStringPath, getChildFromContainer, splitParentPath} from "./pathHelpers";
 import {areLeafValuesEqual, createLeafNodeFromValue, isRefValue, LeafValue} from "./leafUtils";
 
@@ -135,7 +135,7 @@ export function createRegisterVersionFromMetadata<T>(
     };
 }
 
-export function createVersionStampFromMetadata(metadata: ApplyMetadata): VersionStamp {
+export function createVersionStampFromMetadata(metadata: ApplyMetadata): CausalVersionStamp {
     return {
         opId: metadata.opId,
         replicaId: metadata.replicaId,
@@ -179,7 +179,7 @@ function replaceObjectChildWithoutSlotRewriteVersion(
                     ...parent.state.items,
                     [field]: {
                         node: child,
-                        version: null,
+                        causalVersionStamp: null,
                     },
                 },
             },

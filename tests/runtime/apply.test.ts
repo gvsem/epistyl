@@ -219,7 +219,7 @@ describe("runtime/apply", () => {
             }
 
             const slot = getObjectField(next.state, "title");
-            expect(slot?.version).toEqual({
+            expect(slot?.causalVersionStamp).toEqual({
                 opId: "A:1",
                 replicaId: "A",
                 clock: {A: 1},
@@ -395,11 +395,10 @@ describe("runtime/apply", () => {
 
             expect(getObjectField(next.state, "title")).toEqual({
                 node: null,
-                version: {
+                causalVersionStamp: {
                     opId: "A:2",
                     replicaId: "A",
                     clock: {A: 2},
-                    timestamp: undefined,
                 },
             });
         });
@@ -421,7 +420,7 @@ describe("runtime/apply", () => {
             }
 
             const slot = getObjectField(next.state, "location");
-            expect(slot?.version?.opId).toBe("A:1");
+            expect(slot?.causalVersionStamp?.opId).toBe("A:1");
             expect(isObjectNodeState(slot?.node as NodeState)).toBe(true);
         });
 

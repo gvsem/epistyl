@@ -1,8 +1,8 @@
-import {cloneVersionStamp, type VersionStamp} from "./version";
+import {cloneCausalVersionStamp, type CausalVersionStamp} from "./version";
 
-export type ObjectVersion = VersionStamp;
+export type ObjectCausalVersionStamp = CausalVersionStamp;
 
-export const createObjectVersion = cloneVersionStamp;
+export const createObjectVersion = cloneCausalVersionStamp;
 
 export interface ObjectEntryState<TNode> {
     /**
@@ -15,7 +15,7 @@ export interface ObjectEntryState<TNode> {
      * Version of the binding itself.
      * Controls whether the key is considered present.
      */
-    version: ObjectVersion | null;
+    causalVersionStamp: ObjectCausalVersionStamp | null;
 }
 
 export interface ObjectState<TNode> {
@@ -47,14 +47,14 @@ export function setObjectField<TNode>(
     state: ObjectState<TNode>,
     field: string,
     node: TNode,
-    version: ObjectVersion,
+    causalVersionStamp: ObjectCausalVersionStamp,
 ): ObjectState<TNode> {
     return {
         items: {
             ...state.items,
             [field]: {
                 node,
-                version: createObjectVersion(version),
+                causalVersionStamp: createObjectVersion(causalVersionStamp),
             },
         },
     };
@@ -63,14 +63,14 @@ export function setObjectField<TNode>(
 export function deleteObjectField<TNode>(
     state: ObjectState<TNode>,
     field: string,
-    version: ObjectVersion,
+    causalVersionStamp: ObjectCausalVersionStamp,
 ): ObjectState<TNode> {
     return {
         items: {
             ...state.items,
             [field]: {
                 node: null,
-                version: createObjectVersion(version),
+                causalVersionStamp: createObjectVersion(causalVersionStamp),
             },
         },
     };

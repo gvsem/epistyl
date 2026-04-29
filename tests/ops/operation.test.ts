@@ -9,7 +9,7 @@ import {
     type Operation,
 } from "../../src/ops/operation";
 import type { Action } from "../../src/ops/action";
-import {ClockRelation} from "../../src/clock/clock";
+import {PartialOrderClockRelation} from "../../src/clock/clock";
 
 function action(): Action {
     return {

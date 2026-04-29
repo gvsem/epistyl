@@ -1,5 +1,5 @@
 import type {Action} from "./action";
-import {ClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
+import {PartialOrderClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
 
 export type ObjectId = string;
 export type TxId = string;
@@ -55,11 +55,11 @@ export function compareOperations(a: Operation, b: Operation): number {
 
     const causal = compareClocks(a.clock, b.clock);
 
-    if (causal === ClockRelation.BEFORE) {
+    if (causal === PartialOrderClockRelation.BEFORE) {
         return -1;
     }
 
-    if (causal === ClockRelation.AFTER) {
+    if (causal === PartialOrderClockRelation.AFTER) {
         return 1;
     }
 

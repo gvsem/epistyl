@@ -1,10 +1,10 @@
 import {
-    type ClockState,
-    createClockState,
+    type ReplicaClockState,
+    createReplicaClockState,
     getClockValue,
-    issueClock,
+    tickClock,
     mergeClocks,
-    observeClock,
+    acceptClock,
     ReplicaId,
 } from "../clock/clock";
 
@@ -28,7 +28,7 @@ export interface ObjectHistory {
 
 export interface ReplicaState {
     replicaId: ReplicaId;
-    clockState: ClockState;
+    clockState: ReplicaClockState;
     objects: Record<ObjectId, ObjectHistory>;
 }
 
@@ -57,7 +57,7 @@ export function createReplicaState(
 ): ReplicaState {
     return {
         replicaId,
-        clockState: createClockState(replicaId),
+        clockState: createReplicaClockState(replicaId),
         objects: {},
     };
 }
@@ -84,7 +84,7 @@ export function appendOperation(
 
     return {
         ...replica,
-        clockState: observeClock(replica.clockState, operation.clock),
+        clockState: acceptClock(replica.clockState, operation.clock),
         objects: {
             ...replica.objects,
             [operation.objectId]: nextHistory,
@@ -183,7 +183,7 @@ export function issueReplicaOperation(
     action: Action,
     txId?: TxId,
 ): IssueReplicaOperationResult {
-    const issued = issueClock(replica.clockState);
+    const issued = tickClock(replica.clockState);
 
     const operation: Operation = {
         opId: `${replica.replicaId}:${issued.state.counter}`,
@@ -233,7 +233,7 @@ export function issueTransaction(
         {
             replicaId: replica.replicaId,
             issueOperationMetadata() {
-                const issued = issueClock(workingReplica.clockState);
+                const issued = tickClock(workingReplica.clockState);
 
                 workingReplica = {
                     ...workingReplica,

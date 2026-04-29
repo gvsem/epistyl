@@ -1,14 +1,14 @@
 export type ReplicaId = string;
 export type VectorClock = Record<ReplicaId, number>;
 
-export enum ClockRelation {
+export enum PartialOrderClockRelation {
     EQUAL,
     BEFORE,
     AFTER,
     CONCURRENT
 }
 
-export interface ClockState {
+export interface ReplicaClockState {
     replicaId: ReplicaId;
     clock: VectorClock;
     counter: number;
@@ -56,7 +56,7 @@ export function mergeClocks(
 export function compareClocks(
     a: VectorClock,
     b: VectorClock,
-): ClockRelation {
+): PartialOrderClockRelation {
     const replicaIds = new Set<string>([
         ...Object.keys(a),
         ...Object.keys(b),
@@ -77,23 +77,23 @@ export function compareClocks(
     }
 
     if (!aLess && !aGreater) {
-        return ClockRelation.EQUAL;
+        return PartialOrderClockRelation.EQUAL;
     }
 
     if (aLess && !aGreater) {
-        return ClockRelation.BEFORE;
+        return PartialOrderClockRelation.BEFORE;
     }
 
     if (!aLess && aGreater) {
-        return ClockRelation.AFTER;
+        return PartialOrderClockRelation.AFTER;
     }
 
-    return ClockRelation.CONCURRENT;
+    return PartialOrderClockRelation.CONCURRENT;
 }
 
-export function createClockState(
+export function createReplicaClockState(
     replicaId: ReplicaId,
-): ClockState {
+): ReplicaClockState {
     return {
         replicaId,
         clock: {},
@@ -101,8 +101,8 @@ export function createClockState(
     };
 }
 
-export function issueClock(state: ClockState): {
-    state: ClockState
+export function tickClock(state: ReplicaClockState): {
+    state: ReplicaClockState
 } {
     const nextCounter = state.counter + 1;
     const nextClock = {
@@ -119,10 +119,10 @@ export function issueClock(state: ClockState): {
     };
 }
 
-export function observeClock(
-    state: ClockState,
+export function acceptClock(
+    state: ReplicaClockState,
     observed: VectorClock,
-): ClockState {
+): ReplicaClockState {
     const merged = mergeClocks(state.clock, observed);
     const localCounter = Math.max(
         state.counter,
