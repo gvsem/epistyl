@@ -3,7 +3,7 @@ import type {ObjectId, Operation, OperationId, TransactionId,} from "./operation
 import type {ReplicaId, VectorClock} from "../clock/clock";
 import {LeafValue} from "../runtime/leafUtils";
 
-export interface TransactionRecord {
+export interface TransactionData {
     /**
      * Transaction identifier.
      */
@@ -84,9 +84,9 @@ export interface TransactionBuilder {
     getOperations(): readonly Operation[];
 
     /**
-     * Finalizes the builder and returns a serializable transaction record.
+     * Finalizes the builder and returns a serializable transaction data.
      */
-    toRecord(): TransactionRecord;
+    toData(): TransactionData;
 }
 
 class DefaultTransactionBuilder implements TransactionBuilder {
@@ -196,7 +196,7 @@ class DefaultTransactionBuilder implements TransactionBuilder {
         return [...this.operations];
     }
 
-    toRecord(): TransactionRecord {
+    toData(): TransactionData {
         return {
             txId: this.txId,
             objectId: this.objectId,

@@ -11,7 +11,7 @@ import {
 import type {ObjectId, Operation, TransactionId,} from "../ops/operation";
 import {deduplicateOperations, sortOperationsCausally,} from "../ops/log";
 
-import type {TransactionBuilder, TransactionRecord} from "../ops/transaction";
+import type {TransactionBuilder, TransactionData} from "../ops/transaction";
 import {createTransactionBuilder} from "../ops/transaction";
 
 import type {NodeState} from "../crdt/state";
@@ -107,7 +107,7 @@ export function appendOperations(
 
 export function appendTransaction(
     replica: ReplicaState,
-    transaction: TransactionRecord,
+    transaction: TransactionData,
 ): ReplicaState {
     return appendOperations(replica, transaction.operations);
 }
@@ -215,7 +215,7 @@ export function applyLocalAction(
 
 export interface IssueTransactionResult {
     replica: ReplicaState;
-    transaction: TransactionRecord;
+    transaction: TransactionData;
 }
 
 export function issueTransaction(
@@ -252,7 +252,7 @@ export function issueTransaction(
 
     return {
         replica: workingReplica,
-        transaction: builder.toRecord(),
+        transaction: builder.toData(),
     };
 }
 

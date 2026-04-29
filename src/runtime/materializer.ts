@@ -1,7 +1,7 @@
 import type {ObjectId, Operation} from "../ops/operation";
 import {deduplicateOperations, sortOperationsCausally,} from "../ops/log";
 
-import type {TransactionRecord} from "../ops/transaction";
+import type {TransactionData} from "../ops/transaction";
 
 import {createObjectNodeState, type NodeState,} from "../crdt/state";
 
@@ -10,7 +10,7 @@ import {ObjectHistory} from "./replica";
 
 export interface TransactionHistory {
     objectId: ObjectId;
-    transactions: TransactionRecord[];
+    transactions: TransactionData[];
 }
 
 export interface MaterializeOptions {

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import type { Action } from "../../src/ops/action";
 import type { Operation } from "../../src/ops/operation";
-import type { TransactionRecord } from "../../src/ops/transaction";
+import type { TransactionData } from "../../src/ops/transaction";
 
 import {
     filterOperationsByObjectId,
@@ -116,7 +116,7 @@ describe("runtime/materializer", () => {
                             operation("B:1", "B", { B: 1 }),
                         ],
                     },
-                ] satisfies TransactionRecord[],
+                ] satisfies TransactionData[],
             };
 
             expect(flattenTransactionHistory(history).map((op) => op.operationId)).toEqual([
@@ -278,7 +278,7 @@ describe("runtime/materializer", () => {
                             }),
                         ],
                     },
-                ] satisfies TransactionRecord[],
+                ] satisfies TransactionData[],
             };
 
             const result = materializeTransactionHistory(history, { applyContext });
@@ -322,7 +322,7 @@ describe("runtime/materializer", () => {
                             }),
                         ],
                     },
-                ] satisfies TransactionRecord[],
+                ] satisfies TransactionData[],
             };
 
             const result = materializeTransactionHistory(history, { applyContext });

@@ -48,7 +48,7 @@ describe("ops/transaction", () => {
         expect(tx.replicaId).toBe("A");
 
         expect(tx.getOperations()).toEqual([]);
-        expect(tx.toRecord()).toEqual({
+        expect(tx.toData()).toEqual({
             txId: "A:tx:1",
             objectId: "event-1",
             replicaId: "A",
@@ -67,7 +67,7 @@ describe("ops/transaction", () => {
             context,
         );
 
-        expect(tx.toRecord()).toEqual({
+        expect(tx.toData()).toEqual({
             txId: "A:tx:1",
             objectId: "event-1",
             replicaId: "A",
@@ -369,13 +369,13 @@ describe("ops/transaction", () => {
         expect(tx.getOperations()[0]?.operationId).toBe("A:1");
     });
 
-    it("toRecord returns snapshot copy of operations", () => {
+    it("toData returns snapshot copy of operations", () => {
         const { context } = createBuildContext("A");
 
         const tx = createTransactionBuilder("A:tx:1", "event-1", context);
         tx.setField(["title"], "Team Sync");
 
-        const record = tx.toRecord();
+        const record = tx.toData();
         record.operations.push({
             operationId: "fake",
             transactionId: "fake",
@@ -388,7 +388,7 @@ describe("ops/transaction", () => {
             },
         });
 
-        expect(tx.toRecord().operations).toHaveLength(1);
-        expect(tx.toRecord().operations[0]?.operationId).toBe("A:1");
+        expect(tx.toData().operations).toHaveLength(1);
+        expect(tx.toData().operations[0]?.operationId).toBe("A:1");
     });
 });

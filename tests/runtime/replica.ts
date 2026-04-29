@@ -2,7 +2,7 @@ import {describe, expect, it} from "vitest";
 
 import type {Action} from "../../src/ops/action";
 import type {Operation} from "../../src/ops/operation";
-import type {TransactionRecord} from "../../src/ops/transaction";
+import type {TransactionData} from "../../src/ops/transaction";
 import type {ApplyContext} from "../../src/runtime/apply";
 
 import {
@@ -186,7 +186,7 @@ describe("runtime/replica", () => {
         it("appends all transaction operations", () => {
             const replica = createReplicaState("A");
 
-            const transaction: TransactionRecord = {
+            const transaction: TransactionData = {
                 txId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
