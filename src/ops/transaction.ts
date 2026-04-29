@@ -30,7 +30,7 @@ interface IssuedOperationData {
     clockSnapshot: VectorClock;
 }
 
-export interface TransactionBuildContext {
+interface TransactionBuilderContext {
     /**
      * Replica on behalf of which operations are issued.
      */
@@ -95,12 +95,12 @@ class DefaultTransactionBuilder implements TransactionBuilder {
     public readonly replicaId: ReplicaId;
 
     private readonly operations: Operation[] = [];
-    private readonly context: TransactionBuildContext;
+    private readonly context: TransactionBuilderContext;
 
     constructor(
         txId: TransactionId,
         objectId: ObjectId,
-        context: TransactionBuildContext,
+        context: TransactionBuilderContext,
     ) {
         this.txId = txId;
         this.objectId = objectId;
@@ -209,7 +209,7 @@ class DefaultTransactionBuilder implements TransactionBuilder {
 export function createTransactionBuilder(
     txId: TransactionId,
     objectId: ObjectId,
-    context: TransactionBuildContext,
+    context: TransactionBuilderContext,
 ): TransactionBuilder {
     return new DefaultTransactionBuilder(
         txId,
