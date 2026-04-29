@@ -67,7 +67,7 @@ describe("crdt/array", () => {
     });
 
     describe("createArrayElementVersion", () => {
-        it("clones the clock object", () => {
+        it("clones the clockSnapshot object", () => {
             const input = version("A:1", "A", {A: 1});
             const created = createArrayElementCausalVersionStamp(input);
 

@@ -45,7 +45,7 @@ describe("crdt/object", () => {
     });
 
     describe("createKeyedVersion", () => {
-        it("clones the clock object", () => {
+        it("clones the clockSnapshot object", () => {
             const input = version("A:1", "A", {A: 1});
             const created = createObjectVersion(input);
 

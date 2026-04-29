@@ -56,7 +56,7 @@ function operation(
         transactionId: "A:tx:1",
         objectId: "event-1",
         replicaId: "A",
-        clock: {A: 1},
+        clockSnapshot: {A: 1},
         action,
         ...overrides,
     };

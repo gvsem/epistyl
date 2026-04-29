@@ -11,14 +11,11 @@ import {
     appendTransaction,
     createObjectHistory,
     createReplicaState,
-    exportReplicaState,
     getObjectHistory,
-    importReplicaState,
     materializeReplicaObject,
     mergeObjectHistories,
     mergeReplicaStates,
     type ReplicaState,
-    upsertObjectHistory,
 } from "../../src/runtime/replica";
 
 import {viewNode} from "../../src/runtime/view";
@@ -42,7 +39,7 @@ function operation(
         transactionId: `${replicaId}:tx:1`,
         objectId: "event-1",
         replicaId,
-        clock,
+        clockSnapshot: clock,
         action: action(),
         ...overrides,
     };
@@ -83,7 +80,7 @@ describe("runtime/replica", () => {
     });
 
     describe("createReplicaState", () => {
-        it("creates empty replica state with initialized clock", () => {
+        it("creates empty replica state with initialized clockSnapshot", () => {
             expect(createReplicaState("A")).toEqual({
                 replicaId: "A",
                 clockState: {
@@ -135,7 +132,7 @@ describe("runtime/replica", () => {
             ]);
         });
 
-        it("observes operation clock into replica clock state", () => {
+        it("observes operation clockSnapshot into replica clockSnapshot state", () => {
             const replica = createReplicaState("A");
 
             const next = appendOperation(
@@ -260,7 +257,7 @@ describe("runtime/replica", () => {
             ]);
         });
 
-        it("merges clock knowledge from both replicas", () => {
+        it("merges clockSnapshot knowledge from both replicas", () => {
             const left = appendOperation(
                 createReplicaState("A"),
                 operation("A:3", "A", {A: 3}),

@@ -37,7 +37,7 @@ function operation(
         transactionId: `${replicaId}:tx:1`,
         objectId: "event-1",
         replicaId,
-        clock,
+        clockSnapshot: clock,
         action: action(),
         ...overrides,
     };

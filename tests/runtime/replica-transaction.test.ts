@@ -22,7 +22,7 @@ const applyContext: ApplyContext = {
 };
 
 describe("runtime/replica transactions", () => {
-    it("issueTransaction returns updated replica clock state and transaction record", () => {
+    it("issueTransaction returns updated replica clockSnapshot state and transaction record", () => {
         const replica = createReplicaState("A");
 
         const issued = issueTransaction(
@@ -50,7 +50,7 @@ describe("runtime/replica transactions", () => {
                     transactionId: "A:tx:1",
                     objectId: OBJECT_ID,
                     replicaId: "A",
-                    clock: {A: 1},
+                    clockSnapshot: {A: 1},
                     action: {
                         type: "field.set",
                         path: ["title"],
@@ -62,7 +62,7 @@ describe("runtime/replica transactions", () => {
                     transactionId: "A:tx:1",
                     objectId: OBJECT_ID,
                     replicaId: "A",
-                    clock: {A: 2},
+                    clockSnapshot: {A: 2},
                     action: {
                         type: "field.set",
                         path: ["description"],

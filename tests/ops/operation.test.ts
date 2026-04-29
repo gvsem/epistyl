@@ -1,15 +1,7 @@
-import { describe, it, expect } from "vitest";
+import {describe, expect, it} from "vitest";
 
-import {
-    compareOperationCausality,
-    compareOperations,
-    deduplicateOperations,
-    isSameOperation,
-    sortOperations,
-    type Operation,
-} from "../../src/ops/operation";
-import type { Action } from "../../src/ops/action";
-import {PartialOrderClockRelation} from "../../src/clock/clock";
+import {compareOperations, deduplicateOperations, type Operation, sortOperations,} from "../../src/ops/operation";
+import type {Action} from "../../src/ops/action";
 
 function action(): Action {
     return {
@@ -30,7 +22,7 @@ function operation(
         transactionId: `${replicaId}:tx:1`,
         objectId: "event-1",
         replicaId,
-        clock,
+        clockSnapshot: clock,
         action: action(),
         ...overrides,
     };

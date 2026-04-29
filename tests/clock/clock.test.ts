@@ -12,7 +12,7 @@ import {
     type VectorClock, PartialOrderClockRelation,
 } from "../../src/clock/clock";
 
-describe("clock/clock", () => {
+describe("clockSnapshot/clockSnapshot", () => {
 
     describe("getClockValue", () => {
         it("returns stored value for known replica", () => {
@@ -113,7 +113,7 @@ describe("clock/clock", () => {
     });
 
     describe("issueClock", () => {
-        it("increments local counter and local clock component", () => {
+        it("increments local counter and local clockSnapshot component", () => {
             const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { A: 2, B: 5 },
@@ -165,7 +165,7 @@ describe("clock/clock", () => {
     });
 
     describe("observeClock", () => {
-        it("merges observed clock into local knowledge", () => {
+        it("merges observed clockSnapshot into local knowledge", () => {
             const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { A: 2, B: 1 },
@@ -181,7 +181,7 @@ describe("clock/clock", () => {
             });
         });
 
-        it("bumps local counter if observed clock knows a later local event", () => {
+        it("bumps local counter if observed clockSnapshot knows a later local event", () => {
             const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { A: 2, B: 1 },
@@ -213,7 +213,7 @@ describe("clock/clock", () => {
             });
         });
 
-        it("works with empty observed clock", () => {
+        it("works with empty observed clockSnapshot", () => {
             const state: ReplicaClockState = {
                 replicaId: "A",
                 clock: { A: 2 },

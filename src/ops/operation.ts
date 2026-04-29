@@ -27,9 +27,9 @@ export interface Operation {
     replicaId: ReplicaId;
 
     /**
-     * Immutable snapshot of the vector clock at creation time.
+     * Immutable snapshot of the vector clockSnapshot at creation time.
      */
-    clock: VectorClock;
+    clockSnapshot: VectorClock;
 
     /**
      * Serialized domain action.
@@ -53,7 +53,7 @@ export function compareOperations(a: Operation, b: Operation): number {
         return 0;
     }
 
-    const causal = compareClocks(a.clock, b.clock);
+    const causal = compareClocks(a.clockSnapshot, b.clockSnapshot);
 
     if (causal === PartialOrderClockRelation.BEFORE) {
         return -1;

@@ -39,7 +39,7 @@ export interface Operation {
   transactionId: string
   objectId: string
   replicaId: string
-  clock: VectorClock
+  clockSnapshot: VectorClock
   action: Action
 }
 ```

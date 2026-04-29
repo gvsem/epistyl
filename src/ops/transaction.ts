@@ -38,7 +38,7 @@ export interface TransactionBuildContext {
 
     /**
      * Issues metadata for the next operation in the transaction.
-     * Returned clock must be an immutable snapshot.
+     * Returned clockSnapshot must be an immutable snapshot.
      */
     issueOperationMetadata(): IssuedOperationMetadata;
 }
@@ -116,7 +116,7 @@ class DefaultTransactionBuilder implements TransactionBuilder {
             transactionId: this.txId,
             objectId: this.objectId,
             replicaId: this.replicaId,
-            clock: { ...issued.clock },
+            clockSnapshot: { ...issued.clock },
             action,
         };
 

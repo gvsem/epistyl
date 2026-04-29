@@ -73,7 +73,7 @@ export function applyOperationToRoot(
         {
             opId: operation.operationId,
             replicaId: operation.replicaId,
-            clock: operation.clock,
+            clock: operation.clockSnapshot,
         },
         context,
     );

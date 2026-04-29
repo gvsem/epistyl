@@ -84,7 +84,7 @@ export function appendOperation(
 
     return {
         ...replica,
-        clockState: acceptClock(replica.clockState, operation.clock),
+        clockState: acceptClock(replica.clockState, operation.clockSnapshot),
         objects: {
             ...replica.objects,
             [operation.objectId]: nextHistory,
@@ -190,7 +190,7 @@ export function issueReplicaOperation(
         transactionId: txId ?? `${replica.replicaId}:tx:${issued.state.counter}`,
         objectId,
         replicaId: replica.replicaId,
-        clock: issued.state.clock,
+        clockSnapshot: issued.state.clock,
         action,
     };
 

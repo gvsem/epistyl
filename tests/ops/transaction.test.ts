@@ -87,7 +87,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 1 },
+                clockSnapshot: { A: 1 },
                 action: {
                     type: "field.set",
                     path: ["title"],
@@ -109,7 +109,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 1 },
+                clockSnapshot: { A: 1 },
                 action: {
                     type: "field.delete",
                     path: ["title"],
@@ -133,7 +133,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 1 },
+                clockSnapshot: { A: 1 },
                 action: {
                     type: "node.initObject",
                     path: ["location"],
@@ -144,7 +144,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 2 },
+                clockSnapshot: { A: 2 },
                 action: {
                     type: "node.initSet",
                     path: ["tags"],
@@ -155,7 +155,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 3 },
+                clockSnapshot: { A: 3 },
                 action: {
                     type: "node.initArray",
                     path: ["attendees"],
@@ -180,7 +180,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 1 },
+                clockSnapshot: { A: 1 },
                 action: {
                     type: "node.initObject",
                     path: ["metadata"],
@@ -191,7 +191,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 2 },
+                clockSnapshot: { A: 2 },
                 action: {
                     type: "field.set",
                     path: ["metadata", "color"],
@@ -203,7 +203,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 3 },
+                clockSnapshot: { A: 3 },
                 action: {
                     type: "node.initObject",
                     path: ["metadata", "nested"],
@@ -214,7 +214,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 4 },
+                clockSnapshot: { A: 4 },
                 action: {
                     type: "field.delete",
                     path: ["metadata", "obsolete"],
@@ -237,7 +237,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 1 },
+                clockSnapshot: { A: 1 },
                 action: {
                     type: "set.add",
                     path: ["tags"],
@@ -249,7 +249,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 2 },
+                clockSnapshot: { A: 2 },
                 action: {
                     type: "set.remove",
                     path: ["tags"],
@@ -276,7 +276,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 1 },
+                clockSnapshot: { A: 1 },
                 action: {
                     type: "array.insert",
                     path: ["attendees"],
@@ -292,7 +292,7 @@ describe("ops/transaction", () => {
                 transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
-                clock: { A: 2 },
+                clockSnapshot: { A: 2 },
                 action: {
                     type: "array.remove",
                     path: ["attendees"],
@@ -333,7 +333,7 @@ describe("ops/transaction", () => {
             "A:3",
         ]);
 
-        expect(tx.getOperations().map((op) => op.clock)).toEqual([
+        expect(tx.getOperations().map((op) => op.clockSnapshot)).toEqual([
             { A: 1 },
             { A: 2 },
             { A: 3 },
@@ -358,7 +358,7 @@ describe("ops/transaction", () => {
             transactionId: "fake",
             objectId: "fake",
             replicaId: "A",
-            clock: { A: 999 },
+            clockSnapshot: { A: 999 },
             action: {
                 type: "field.delete",
                 path: ["title"],
@@ -381,7 +381,7 @@ describe("ops/transaction", () => {
             transactionId: "fake",
             objectId: "fake",
             replicaId: "A",
-            clock: { A: 999 },
+            clockSnapshot: { A: 999 },
             action: {
                 type: "field.delete",
                 path: ["title"],
