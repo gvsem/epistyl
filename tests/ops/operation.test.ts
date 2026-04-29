@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
 
-import {compareOperations, deduplicateOperations, type Operation, sortOperationsCausally,} from "../../src/ops/operation";
+import type {Operation} from "../../src/ops/operation";
+import {compareOperations, deduplicateOperations, sortOperationsCausally,} from "../../src/ops/log";
 import type {Action} from "../../src/ops/action";
 
 function action(): Action {

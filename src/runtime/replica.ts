@@ -9,7 +9,7 @@ import {
 } from "../clock/clock";
 
 import type {ObjectId, Operation, TransactionId,} from "../ops/operation";
-import {deduplicateOperations, sortOperationsCausally,} from "../ops/operation";
+import {deduplicateOperations, sortOperationsCausally,} from "../ops/log";
 
 import type {TransactionBuilder, TransactionRecord} from "../ops/transaction";
 import {createTransactionBuilder} from "../ops/transaction";

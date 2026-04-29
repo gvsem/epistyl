@@ -8,6 +8,7 @@ export * from "./crdt/state";
 export * from "./crdt/version";
 
 export * from "./ops/action";
+export * from "./ops/log";
 export * from "./ops/operation";
 export * from "./ops/transaction";
 

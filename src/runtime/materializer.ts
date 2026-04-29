@@ -1,5 +1,5 @@
 import type {ObjectId, Operation} from "../ops/operation";
-import {deduplicateOperations, sortOperationsCausally,} from "../ops/operation";
+import {deduplicateOperations, sortOperationsCausally,} from "../ops/log";
 
 import type {TransactionRecord} from "../ops/transaction";
 
