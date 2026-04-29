@@ -52,8 +52,8 @@ function operation(
     overrides: Partial<Operation> = {},
 ): Operation {
     return {
-        opId: "A:1",
-        txId: "A:tx:1",
+        operationId: "A:1",
+        transactionId: "A:tx:1",
         objectId: "event-1",
         replicaId: "A",
         clock: {A: 1},

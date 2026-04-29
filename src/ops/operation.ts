@@ -2,19 +2,19 @@ import type {Action} from "./action";
 import {PartialOrderClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
 
 export type ObjectId = string;
-export type TxId = string;
-export type OpId = string;
+export type TransactionId = string;
+export type OperationId = string;
 
 export interface Operation {
     /**
      * Globally unique operation identifier. (Replica Id + Operation counter). A:1. Replica A; Counter 1
      */
-    opId: OpId;
+    operationId: OperationId;
 
     /**
      * Identifier of the transaction this operation belongs to.
      */
-    txId: TxId;
+    transactionId: TransactionId;
 
     /**
      * Identifier of the root object this operation targets.
@@ -37,7 +37,7 @@ export interface Operation {
     action: Action;
 }
 
-function parseOperationCounter(opId: OpId): number | null {
+function parseOperationCounter(opId: OperationId): number | null {
     const parts = opId.split(":");
     const last = parts[parts.length - 1];
     if (!last) {
@@ -49,7 +49,7 @@ function parseOperationCounter(opId: OpId): number | null {
 }
 
 export function compareOperations(a: Operation, b: Operation): number {
-    if (a.opId === b.opId) {
+    if (a.operationId === b.operationId) {
         return 0;
     }
 
@@ -68,14 +68,14 @@ export function compareOperations(a: Operation, b: Operation): number {
         return a.replicaId < b.replicaId ? -1 : 1;
     }
 
-    const aCounter = parseOperationCounter(a.opId);
-    const bCounter = parseOperationCounter(b.opId);
+    const aCounter = parseOperationCounter(a.operationId);
+    const bCounter = parseOperationCounter(b.operationId);
 
     if (aCounter !== null && bCounter !== null && aCounter !== bCounter) {
         return aCounter - bCounter;
     }
 
-    return a.opId < b.opId ? -1 : 1;
+    return a.operationId < b.operationId ? -1 : 1;
 }
 
 export function sortOperations(
@@ -87,11 +87,11 @@ export function sortOperations(
 export function deduplicateOperations(
     operations: readonly Operation[],
 ): Operation[] {
-    const unique = new Map<OpId, Operation>();
+    const unique = new Map<OperationId, Operation>();
 
     for (const operation of operations) {
-        if (!unique.has(operation.opId)) {
-            unique.set(operation.opId, operation);
+        if (!unique.has(operation.operationId)) {
+            unique.set(operation.operationId, operation);
         }
     }
 

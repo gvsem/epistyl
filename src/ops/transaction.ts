@@ -1,5 +1,5 @@
 import type {Action, ObjectPath,} from "./action";
-import type {ObjectId, Operation, OpId, TxId,} from "./operation";
+import type {ObjectId, Operation, OperationId, TransactionId,} from "./operation";
 import type {ReplicaId, VectorClock} from "../clock/clock";
 import {LeafValue} from "../runtime/leafUtils";
 
@@ -7,7 +7,7 @@ export interface TransactionRecord {
     /**
      * Transaction identifier.
      */
-    txId: TxId;
+    txId: TransactionId;
 
     /**
      * Identifier of the root object affected by the transaction. Now transaction can affect just one object
@@ -26,7 +26,7 @@ export interface TransactionRecord {
 }
 
 export interface IssuedOperationMetadata {
-    opId: OpId;
+    opId: OperationId;
     clock: VectorClock;
 }
 
@@ -47,7 +47,7 @@ export interface TransactionBuilder {
     /**
      * Identifier of the transaction being built.
      */
-    readonly txId: TxId;
+    readonly txId: TransactionId;
 
     /**
      * Identifier of the target root object.
@@ -90,7 +90,7 @@ export interface TransactionBuilder {
 }
 
 class DefaultTransactionBuilder implements TransactionBuilder {
-    public readonly txId: TxId;
+    public readonly txId: TransactionId;
     public readonly objectId: ObjectId;
     public readonly replicaId: ReplicaId;
 
@@ -98,7 +98,7 @@ class DefaultTransactionBuilder implements TransactionBuilder {
     private readonly context: TransactionBuildContext;
 
     constructor(
-        txId: TxId,
+        txId: TransactionId,
         objectId: ObjectId,
         context: TransactionBuildContext,
     ) {
@@ -112,8 +112,8 @@ class DefaultTransactionBuilder implements TransactionBuilder {
         const issued = this.context.issueOperationMetadata();
 
         const operation: Operation = {
-            opId: issued.opId,
-            txId: this.txId,
+            operationId: issued.opId,
+            transactionId: this.txId,
             objectId: this.objectId,
             replicaId: this.replicaId,
             clock: { ...issued.clock },
@@ -207,7 +207,7 @@ class DefaultTransactionBuilder implements TransactionBuilder {
 }
 
 export function createTransactionBuilder(
-    txId: TxId,
+    txId: TransactionId,
     objectId: ObjectId,
     context: TransactionBuildContext,
 ): TransactionBuilder {

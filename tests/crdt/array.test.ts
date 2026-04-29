@@ -78,7 +78,7 @@ describe("crdt/array", () => {
     });
 
     describe("compareArrayElementVersions", () => {
-        it("returns 0 for identical opId", () => {
+        it("returns 0 for identical operationId", () => {
             const a = version("A:1", "A", {A: 1});
             const b = version("A:1", "A", {A: 999});
 
@@ -101,7 +101,7 @@ describe("crdt/array", () => {
             expect(compareArrayElementCausalVersionStamps(b, a)).toBeGreaterThan(0);
         });
 
-        it("uses opId as final tie-breaker when replicaId is the same", () => {
+        it("uses operationId as final tie-breaker when replicaId is the same", () => {
             const a = version("A:1", "A", {A: 1, B: 1});
             const b = version("A:2", "A", {A: 1, B: 1});
 

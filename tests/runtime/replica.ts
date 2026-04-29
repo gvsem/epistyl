@@ -38,8 +38,8 @@ function operation(
     overrides: Partial<Operation> = {},
 ): Operation {
     return {
-        opId,
-        txId: `${replicaId}:tx:1`,
+        operationId: opId,
+        transactionId: `${replicaId}:tx:1`,
         objectId: "event-1",
         replicaId,
         clock,
@@ -73,7 +73,7 @@ describe("runtime/replica", () => {
                 operation("A:2", "A", {A: 1, B: 1}),
             ]);
 
-            expect(history.operations.map((op) => op.opId)).toEqual([
+            expect(history.operations.map((op) => op.operationId)).toEqual([
                 "A:1",
                 "B:1",
                 "A:2",
@@ -130,7 +130,7 @@ describe("runtime/replica", () => {
                 operation("A:1", "A", {A: 1}),
             );
 
-            expect(next.objects["event-1"]?.operations.map((op) => op.opId)).toEqual([
+            expect(next.objects["event-1"]?.operations.map((op) => op.operationId)).toEqual([
                 "A:1",
             ]);
         });
@@ -150,14 +150,14 @@ describe("runtime/replica", () => {
             });
         });
 
-        it("deduplicates repeated operation by opId", () => {
+        it("deduplicates repeated operation by operationId", () => {
             let replica = createReplicaState("A");
             const op = operation("A:1", "A", {A: 1});
 
             replica = appendOperation(replica, op);
             replica = appendOperation(replica, op);
 
-            expect(replica.objects["event-1"]?.operations.map((item) => item.opId)).toEqual([
+            expect(replica.objects["event-1"]?.operations.map((item) => item.operationId)).toEqual([
                 "A:1",
             ]);
         });
@@ -172,7 +172,7 @@ describe("runtime/replica", () => {
                 operation("B:1", "B", {A: 1, B: 1}),
             ]);
 
-            expect(next.objects["event-1"]?.operations.map((op) => op.opId)).toEqual([
+            expect(next.objects["event-1"]?.operations.map((op) => op.operationId)).toEqual([
                 "A:1",
                 "B:1",
             ]);
@@ -202,7 +202,7 @@ describe("runtime/replica", () => {
             const next = appendTransaction(replica, transaction);
 
             expect(next.objects["event-1"]?.objectId).toBe("event-1");
-            expect(next.objects["event-1"]?.operations.map((op) => op.opId)).toEqual([
+            expect(next.objects["event-1"]?.operations.map((op) => op.operationId)).toEqual([
                 "A:1",
                 "A:2",
             ]);
@@ -223,7 +223,7 @@ describe("runtime/replica", () => {
             const merged = mergeObjectHistories(left, right, "event-1");
 
             expect(merged.objectId).toBe("event-1");
-            expect(merged.operations.map((op) => op.opId)).toEqual([
+            expect(merged.operations.map((op) => op.operationId)).toEqual([
                 "A:1",
                 "B:1",
             ]);
@@ -254,7 +254,7 @@ describe("runtime/replica", () => {
             const merged = mergeReplicaStates(left, right, "M");
 
             expect(merged.replicaId).toBe("M");
-            expect(merged.objects["event-1"]?.operations.map((op) => op.opId)).toEqual([
+            expect(merged.objects["event-1"]?.operations.map((op) => op.operationId)).toEqual([
                 "A:1",
                 "B:1",
             ]);
@@ -349,7 +349,7 @@ describe("runtime/replica", () => {
             });
 
             expect(result.objectId).toBe("event-1");
-            expect(result.operations.map((op) => op.opId)).toEqual(["A:1"]);
+            expect(result.operations.map((op) => op.operationId)).toEqual(["A:1"]);
             expect(viewNode(result.root)).toEqual({
                 title: {
                     kind: "mv",

@@ -33,8 +33,8 @@ function operation(
     overrides: Partial<Operation> = {},
 ): Operation {
     return {
-        opId,
-        txId: `${replicaId}:tx:1`,
+        operationId: opId,
+        transactionId: `${replicaId}:tx:1`,
         objectId: "event-1",
         replicaId,
         clock,
@@ -59,7 +59,7 @@ describe("runtime/materializer", () => {
                 operation("B:1", "B", { B: 1 }, { objectId: "event-1" }),
             ];
 
-            expect(filterOperationsByObjectId(ops, "event-1").map((op) => op.opId)).toEqual([
+            expect(filterOperationsByObjectId(ops, "event-1").map((op) => op.operationId)).toEqual([
                 "A:1",
                 "B:1",
             ]);
@@ -85,7 +85,7 @@ describe("runtime/materializer", () => {
                 operation("X:1", "X", { X: 1 }, { objectId: "other-object" }),
             ];
 
-            expect(normalizeOperationsForObject(ops, "event-1").map((op) => op.opId)).toEqual([
+            expect(normalizeOperationsForObject(ops, "event-1").map((op) => op.operationId)).toEqual([
                 "A:1",
                 "B:1",
                 "A:2",
@@ -119,7 +119,7 @@ describe("runtime/materializer", () => {
                 ] satisfies TransactionRecord[],
             };
 
-            expect(flattenTransactionHistory(history).map((op) => op.opId)).toEqual([
+            expect(flattenTransactionHistory(history).map((op) => op.operationId)).toEqual([
                 "A:1",
                 "A:2",
                 "B:1",
@@ -154,7 +154,7 @@ describe("runtime/materializer", () => {
             const result = materializeOperations("event-1", ops, { applyContext });
 
             expect(result.objectId).toBe("event-1");
-            expect(result.operations.map((op) => op.opId)).toEqual(["A:1", "A:2"]);
+            expect(result.operations.map((op) => op.operationId)).toEqual(["A:1", "A:2"]);
             expect(viewNode(result.root)).toEqual({
                 title: {
                     kind: "mv",
@@ -230,7 +230,7 @@ describe("runtime/materializer", () => {
             const result = materializeObjectHistory(history, { applyContext });
 
             expect(result.objectId).toBe("event-1");
-            expect(result.operations.map((op) => op.opId)).toEqual(["A:1"]);
+            expect(result.operations.map((op) => op.operationId)).toEqual(["A:1"]);
             expect(viewNode(result.root)).toEqual({
                 title: {
                     kind: "mv",
@@ -283,7 +283,7 @@ describe("runtime/materializer", () => {
 
             const result = materializeTransactionHistory(history, { applyContext });
 
-            expect(result.operations.map((op) => op.opId)).toEqual([
+            expect(result.operations.map((op) => op.operationId)).toEqual([
                 "A:1",
                 "A:2",
                 "B:1",
@@ -327,7 +327,7 @@ describe("runtime/materializer", () => {
 
             const result = materializeTransactionHistory(history, { applyContext });
 
-            expect(result.operations.map((op) => op.opId)).toEqual(["A:1"]);
+            expect(result.operations.map((op) => op.operationId)).toEqual(["A:1"]);
             expect(viewNode(result.root)).toEqual({
                 title: {
                     kind: "mv",

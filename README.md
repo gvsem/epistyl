@@ -35,8 +35,8 @@ Every local change is represented as an immutable operation.
 
 ```ts
 export interface Operation {
-  opId: string
-  txId: string
+  operationId: string
+  transactionId: string
   objectId: string
   replicaId: string
   clock: VectorClock

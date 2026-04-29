@@ -83,8 +83,8 @@ describe("ops/transaction", () => {
 
         expect(tx.getOperations()).toEqual([
             {
-                opId: "A:1",
-                txId: "A:tx:1",
+                operationId: "A:1",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 1 },
@@ -105,8 +105,8 @@ describe("ops/transaction", () => {
 
         expect(tx.getOperations()).toEqual([
             {
-                opId: "A:1",
-                txId: "A:tx:1",
+                operationId: "A:1",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 1 },
@@ -129,8 +129,8 @@ describe("ops/transaction", () => {
 
         expect(tx.getOperations()).toEqual([
             {
-                opId: "A:1",
-                txId: "A:tx:1",
+                operationId: "A:1",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 1 },
@@ -140,8 +140,8 @@ describe("ops/transaction", () => {
                 }
             },
             {
-                opId: "A:2",
-                txId: "A:tx:1",
+                operationId: "A:2",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 2 },
@@ -151,8 +151,8 @@ describe("ops/transaction", () => {
                 }
             },
             {
-                opId: "A:3",
-                txId: "A:tx:1",
+                operationId: "A:3",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 3 },
@@ -176,8 +176,8 @@ describe("ops/transaction", () => {
 
         expect(tx.getOperations()).toEqual([
             {
-                opId: "A:1",
-                txId: "A:tx:1",
+                operationId: "A:1",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 1 },
@@ -187,8 +187,8 @@ describe("ops/transaction", () => {
                 },
             },
             {
-                opId: "A:2",
-                txId: "A:tx:1",
+                operationId: "A:2",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 2 },
@@ -199,8 +199,8 @@ describe("ops/transaction", () => {
                 },
             },
             {
-                opId: "A:3",
-                txId: "A:tx:1",
+                operationId: "A:3",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 3 },
@@ -210,8 +210,8 @@ describe("ops/transaction", () => {
                 },
             },
             {
-                opId: "A:4",
-                txId: "A:tx:1",
+                operationId: "A:4",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 4 },
@@ -233,8 +233,8 @@ describe("ops/transaction", () => {
 
         expect(tx.getOperations()).toEqual([
             {
-                opId: "A:1",
-                txId: "A:tx:1",
+                operationId: "A:1",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 1 },
@@ -245,8 +245,8 @@ describe("ops/transaction", () => {
                 }
             },
             {
-                opId: "A:2",
-                txId: "A:tx:1",
+                operationId: "A:2",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 2 },
@@ -272,8 +272,8 @@ describe("ops/transaction", () => {
 
         expect(tx.getOperations()).toEqual([
             {
-                opId: "A:1",
-                txId: "A:tx:1",
+                operationId: "A:1",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 1 },
@@ -288,8 +288,8 @@ describe("ops/transaction", () => {
                 },
             },
             {
-                opId: "A:2",
-                txId: "A:tx:1",
+                operationId: "A:2",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 clock: { A: 2 },
@@ -302,7 +302,7 @@ describe("ops/transaction", () => {
         ]);
     });
 
-    it("uses same txId for all operations in one transaction", () => {
+    it("uses same transactionId for all operations in one transaction", () => {
         const { context } = createBuildContext("A");
 
         const tx = createTransactionBuilder("A:tx:1", "event-1", context);
@@ -311,7 +311,7 @@ describe("ops/transaction", () => {
         tx.setField(["description"], "Weekly planning");
         tx.setAdd(["tags"], "team");
 
-        expect(tx.getOperations().map((op) => op.txId)).toEqual([
+        expect(tx.getOperations().map((op) => op.transactionId)).toEqual([
             "A:tx:1",
             "A:tx:1",
             "A:tx:1",
@@ -327,7 +327,7 @@ describe("ops/transaction", () => {
         tx.setField(["description"], "Weekly planning");
         tx.setField(["startAt"], "2026-03-07T10:00:00Z");
 
-        expect(tx.getOperations().map((op) => op.opId)).toEqual([
+        expect(tx.getOperations().map((op) => op.operationId)).toEqual([
             "A:1",
             "A:2",
             "A:3",
@@ -354,8 +354,8 @@ describe("ops/transaction", () => {
 
         const ops = tx.getOperations() as Operation[];
         ops.push({
-            opId: "fake",
-            txId: "fake",
+            operationId: "fake",
+            transactionId: "fake",
             objectId: "fake",
             replicaId: "A",
             clock: { A: 999 },
@@ -366,7 +366,7 @@ describe("ops/transaction", () => {
         });
 
         expect(tx.getOperations()).toHaveLength(1);
-        expect(tx.getOperations()[0]?.opId).toBe("A:1");
+        expect(tx.getOperations()[0]?.operationId).toBe("A:1");
     });
 
     it("toRecord returns snapshot copy of operations", () => {
@@ -377,8 +377,8 @@ describe("ops/transaction", () => {
 
         const record = tx.toRecord();
         record.operations.push({
-            opId: "fake",
-            txId: "fake",
+            operationId: "fake",
+            transactionId: "fake",
             objectId: "fake",
             replicaId: "A",
             clock: { A: 999 },
@@ -389,6 +389,6 @@ describe("ops/transaction", () => {
         });
 
         expect(tx.toRecord().operations).toHaveLength(1);
-        expect(tx.toRecord().operations[0]?.opId).toBe("A:1");
+        expect(tx.toRecord().operations[0]?.operationId).toBe("A:1");
     });
 });

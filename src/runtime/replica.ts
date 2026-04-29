@@ -8,7 +8,7 @@ import {
     ReplicaId,
 } from "../clock/clock";
 
-import type {ObjectId, Operation, TxId,} from "../ops/operation";
+import type {ObjectId, Operation, TransactionId,} from "../ops/operation";
 import {deduplicateOperations, sortOperations,} from "../ops/operation";
 
 import type {TransactionBuilder, TransactionRecord} from "../ops/transaction";
@@ -181,13 +181,13 @@ export function issueReplicaOperation(
     replica: ReplicaState,
     objectId: ObjectId,
     action: Action,
-    txId?: TxId,
+    txId?: TransactionId,
 ): IssueReplicaOperationResult {
     const issued = tickClock(replica.clockState);
 
     const operation: Operation = {
-        opId: `${replica.replicaId}:${issued.state.counter}`,
-        txId: txId ?? `${replica.replicaId}:tx:${issued.state.counter}`,
+        operationId: `${replica.replicaId}:${issued.state.counter}`,
+        transactionId: txId ?? `${replica.replicaId}:tx:${issued.state.counter}`,
         objectId,
         replicaId: replica.replicaId,
         clock: issued.state.clock,
@@ -207,7 +207,7 @@ export function applyLocalAction(
     replica: ReplicaState,
     objectId: ObjectId,
     action: Action,
-    txId?: TxId,
+    txId?: TransactionId,
 ): ReplicaState {
     const issued = issueReplicaOperation(replica, objectId, action, txId);
     return appendOperation(issued.replica, issued.operation);

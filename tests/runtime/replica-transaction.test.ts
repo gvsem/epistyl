@@ -46,8 +46,8 @@ describe("runtime/replica transactions", () => {
             replicaId: "A",
             operations: [
                 {
-                    opId: "A:1",
-                    txId: "A:tx:1",
+                    operationId: "A:1",
+                    transactionId: "A:tx:1",
                     objectId: OBJECT_ID,
                     replicaId: "A",
                     clock: {A: 1},
@@ -58,8 +58,8 @@ describe("runtime/replica transactions", () => {
                     }
                 },
                 {
-                    opId: "A:2",
-                    txId: "A:tx:1",
+                    operationId: "A:2",
+                    transactionId: "A:tx:1",
                     objectId: OBJECT_ID,
                     replicaId: "A",
                     clock: {A: 2},
@@ -84,12 +84,12 @@ describe("runtime/replica transactions", () => {
 
         const history = replica.objects[OBJECT_ID];
         expect(history).not.toBeUndefined();
-        expect(history?.operations.map((op) => op.opId)).toEqual([
+        expect(history?.operations.map((op) => op.operationId)).toEqual([
             "A:1",
             "A:2",
             "A:3",
         ]);
-        expect(history?.operations.map((op) => op.txId)).toEqual([
+        expect(history?.operations.map((op) => op.transactionId)).toEqual([
             "A:tx:1",
             "A:tx:1",
             "A:tx:1",
@@ -239,7 +239,7 @@ describe("runtime/replica transactions", () => {
         });
 
         const history = replica.objects[OBJECT_ID];
-        expect(history?.operations.map((op) => [op.opId, op.txId])).toEqual([
+        expect(history?.operations.map((op) => [op.operationId, op.transactionId])).toEqual([
             ["A:1", "A:tx:1"],
             ["A:2", "A:tx:2"],
         ]);
@@ -269,7 +269,7 @@ describe("runtime/replica transactions", () => {
         );
 
         const history = replica.objects[OBJECT_ID];
-        expect(history?.operations.every((op) => op.txId === "A:tx:1")).toBe(true);
+        expect(history?.operations.every((op) => op.transactionId === "A:tx:1")).toBe(true);
 
         const view = viewNode(
             materializeReplicaObject(replica, OBJECT_ID, {applyContext}).root,

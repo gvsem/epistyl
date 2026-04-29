@@ -1,8 +1,8 @@
 import { compareClocks, PartialOrderClockRelation, type ReplicaId, type VectorClock } from "../clock/clock";
-import type { OpId } from "../ops/operation";
+import type { OperationId } from "../ops/operation";
 
 export interface CausalVersionStamp {
-    opId: OpId;
+    opId: OperationId;
     replicaId: ReplicaId;
     clock: VectorClock;
 }

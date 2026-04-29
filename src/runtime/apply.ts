@@ -13,7 +13,7 @@ import type {
 } from "../ops/action";
 import {ContainerNodeKind} from "../ops/action";
 
-import type {Operation, OpId} from "../ops/operation";
+import type {Operation, OperationId} from "../ops/operation";
 
 import type {ReplicaId, VectorClock} from "../clock/clock";
 
@@ -55,7 +55,7 @@ export interface ApplyContext {
 }
 
 export interface ApplyMetadata {
-    opId: OpId;
+    opId: OperationId;
     replicaId: ReplicaId;
     clock: VectorClock;
 }
@@ -71,7 +71,7 @@ export function applyOperationToRoot(
         root,
         operation.action,
         {
-            opId: operation.opId,
+            opId: operation.operationId,
             replicaId: operation.replicaId,
             clock: operation.clock,
         },

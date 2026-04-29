@@ -108,7 +108,7 @@ describe("crdt/set", () => {
     });
 
     describe("compareSetRemoveVersions", () => {
-        it("returns 0 for identical opId", () => {
+        it("returns 0 for identical operationId", () => {
             const a = removeVersion("x", "A:1", "A", { A: 1 }, ["A:0"]);
             const b = removeVersion("x", "A:1", "A", { A: 9 }, ["A:7"]);
 
@@ -123,7 +123,7 @@ describe("crdt/set", () => {
             expect(compareSetRemoveVersions(b, a)).toBeGreaterThan(0);
         });
 
-        it("uses opId as second ordering key", () => {
+        it("uses operationId as second ordering key", () => {
             const a = removeVersion("x", "A:1", "A", { A: 1 }, []);
             const b = removeVersion("x", "A:2", "A", { A: 2 }, []);
 
@@ -273,7 +273,7 @@ describe("crdt/set", () => {
             ]);
         });
 
-        it("deduplicates remove records by opId", () => {
+        it("deduplicates remove records by operationId", () => {
             let state: SetState<string> = {
                 adds: [add("team", "A:1", "A", { A: 1 })],
                 removes: [],

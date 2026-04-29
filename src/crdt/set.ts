@@ -1,5 +1,5 @@
 import type {ReplicaId, VectorClock} from "../clock/clock";
-import type {OpId} from "../ops/operation";
+import type {OperationId} from "../ops/operation";
 
 export interface SetValueAdapter<T> {
     equals(left: T, right: T): boolean;
@@ -7,29 +7,29 @@ export interface SetValueAdapter<T> {
 
 export interface SetAddVersion<T> {
     value: T;
-    tag: OpId;
+    tag: OperationId;
     replicaId: ReplicaId;
     clock: VectorClock;
 }
 
 export interface SetRemoveInput<T> {
     value: T;
-    opId: OpId;
+    opId: OperationId;
     replicaId: ReplicaId;
     clock: VectorClock;
 }
 
 export interface SetRemoveVersion<T> {
     value: T;
-    opId: OpId;
+    opId: OperationId;
     replicaId: ReplicaId;
     clock: VectorClock;
-    removedTags: OpId[];
+    removedTags: OperationId[];
 }
 
 export interface SetValueView<T> {
     value: T;
-    liveTags: OpId[];
+    liveTags: OperationId[];
 }
 
 export interface SetState<T> {
@@ -77,7 +77,7 @@ export function compareSetRemoveVersions<T>(
 export function deduplicateSetAdds<T>(
     adds: readonly SetAddVersion<T>[],
 ): SetAddVersion<T>[] {
-    const byTag = new Map<OpId, SetAddVersion<T>>();
+    const byTag = new Map<OperationId, SetAddVersion<T>>();
 
     for (const add of adds) {
         if (!byTag.has(add.tag)) {
@@ -91,7 +91,7 @@ export function deduplicateSetAdds<T>(
 export function deduplicateSetRemoves<T>(
     removes: readonly SetRemoveVersion<T>[],
 ): SetRemoveVersion<T>[] {
-    const byOpId = new Map<OpId, SetRemoveVersion<T>>();
+    const byOpId = new Map<OperationId, SetRemoveVersion<T>>();
 
     for (const remove of removes) {
         if (!byOpId.has(remove.opId)) {
@@ -116,8 +116,8 @@ export function getObservedAddTagsForValue<T>(
     state: SetState<T>,
     value: T,
     adapter: SetValueAdapter<T>,
-): OpId[] {
-    const tags: OpId[] = [];
+): OperationId[] {
+    const tags: OperationId[] = [];
 
     for (const add of state.adds) {
         if (adapter.equals(add.value, value)) {
@@ -157,8 +157,8 @@ export function getRemovedTagsForValue<T>(
     state: SetState<T>,
     value: T,
     adapter: SetValueAdapter<T>,
-): Set<OpId> {
-    const removed = new Set<OpId>();
+): Set<OperationId> {
+    const removed = new Set<OperationId>();
 
     for (const remove of state.removes) {
         if (!adapter.equals(remove.value, value)) {

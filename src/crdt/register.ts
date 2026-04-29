@@ -1,5 +1,5 @@
 import {PartialOrderClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
-import type {OpId} from "../ops/operation";
+import type {OperationId} from "../ops/operation";
 import {compareCausalVersionStamps} from "./version";
 
 export type RegisterSemantics =
@@ -8,7 +8,7 @@ export type RegisterSemantics =
 
 export interface RegisterVersion<T> {
     value: T;
-    opId: OpId;
+    opId: OperationId;
     replicaId: ReplicaId;
     clock: VectorClock;
 }

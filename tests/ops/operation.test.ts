@@ -26,8 +26,8 @@ function operation(
     overrides: Partial<Operation> = {},
 ): Operation {
     return {
-        opId,
-        txId: `${replicaId}:tx:1`,
+        operationId: opId,
+        transactionId: `${replicaId}:tx:1`,
         objectId: "event-1",
         replicaId,
         clock,
@@ -39,7 +39,7 @@ function operation(
 describe("ops/operation", () => {
 
     describe("compareOperations", () => {
-        it("returns 0 for identical opId", () => {
+        it("returns 0 for identical operationId", () => {
             const a = operation("A:1", "A", { A: 1 });
             const b = operation("A:1", "A", { A: 999 });
 
@@ -70,7 +70,7 @@ describe("ops/operation", () => {
             expect(compareOperations(b, a)).toBeGreaterThan(0);
         });
 
-        it("falls back to lexical opId ordering when counters cannot be parsed", () => {
+        it("falls back to lexical operationId ordering when counters cannot be parsed", () => {
             const a = operation("A:foo", "A", { A: 1, B: 1 });
             const b = operation("A:bar", "A", { A: 1, B: 1 });
 
@@ -96,7 +96,7 @@ describe("ops/operation", () => {
                 operation("A:1", "A", { A: 1 }),
             ];
 
-            expect(sortOperations(ops).map((op) => op.opId)).toEqual([
+            expect(sortOperations(ops).map((op) => op.operationId)).toEqual([
                 "A:1",
                 "B:1",
                 "A:2",
@@ -112,20 +112,20 @@ describe("ops/operation", () => {
 
             const sorted = sortOperations(ops);
 
-            expect(sorted.map((op) => op.opId)).toEqual(["A:1", "B:1"]);
-            expect(ops.map((op) => op.opId)).toEqual(["B:1", "A:1"]);
+            expect(sorted.map((op) => op.operationId)).toEqual(["A:1", "B:1"]);
+            expect(ops.map((op) => op.operationId)).toEqual(["B:1", "A:1"]);
         });
     });
 
     describe("deduplicateOperations", () => {
-        it("removes duplicate operations by opId", () => {
+        it("removes duplicate operations by operationId", () => {
             const ops = [
                 operation("A:1", "A", { A: 1 }),
                 operation("A:1", "A", { A: 1 }),
                 operation("B:1", "B", { B: 1 }),
             ];
 
-            expect(deduplicateOperations(ops).map((op) => op.opId)).toEqual([
+            expect(deduplicateOperations(ops).map((op) => op.operationId)).toEqual([
                 "A:1",
                 "B:1",
             ]);
@@ -140,7 +140,7 @@ describe("ops/operation", () => {
                 operation("A:2", "A", { A: 1, B: 1 }),
             ];
 
-            expect(deduplicateOperations(ops).map((op) => op.opId)).toEqual([
+            expect(deduplicateOperations(ops).map((op) => op.operationId)).toEqual([
                 "A:1",
                 "B:1",
                 "A:2",
