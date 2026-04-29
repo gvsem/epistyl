@@ -25,7 +25,7 @@ export interface TransactionData {
     operations: Operation[];
 }
 
-export interface IssuedOperationData {
+interface IssuedOperationData {
     operationId: OperationId;
     clockSnapshot: VectorClock;
 }
