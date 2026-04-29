@@ -78,7 +78,7 @@ export function compareOperations(a: Operation, b: Operation): number {
     return a.operationId < b.operationId ? -1 : 1;
 }
 
-export function sortOperations(
+export function sortOperationsCausally(
     operations: readonly Operation[],
 ): Operation[] {
     return [...operations].sort(compareOperations);
@@ -95,5 +95,5 @@ export function deduplicateOperations(
         }
     }
 
-    return sortOperations([...unique.values()]);
+    return sortOperationsCausally([...unique.values()]);
 }

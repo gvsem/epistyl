@@ -1,5 +1,5 @@
 import type {ObjectId, Operation} from "../ops/operation";
-import {deduplicateOperations, sortOperations,} from "../ops/operation";
+import {deduplicateOperations, sortOperationsCausally,} from "../ops/operation";
 
 import type {TransactionRecord} from "../ops/transaction";
 
@@ -37,7 +37,7 @@ export function normalizeOperationsForObject(
 ): Operation[] {
     const filtered = filterOperationsByObjectId(operations, objectId);
     const deduplicated = deduplicateOperations(filtered);
-    return sortOperations(deduplicated);
+    return sortOperationsCausally(deduplicated);
 }
 
 export function flattenTransactionHistory(

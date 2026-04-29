@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 
-import {compareOperations, deduplicateOperations, type Operation, sortOperations,} from "../../src/ops/operation";
+import {compareOperations, deduplicateOperations, type Operation, sortOperationsCausally,} from "../../src/ops/operation";
 import type {Action} from "../../src/ops/action";
 
 function action(): Action {
@@ -88,7 +88,7 @@ describe("ops/operation", () => {
                 operation("A:1", "A", { A: 1 }),
             ];
 
-            expect(sortOperations(ops).map((op) => op.operationId)).toEqual([
+            expect(sortOperationsCausally(ops).map((op) => op.operationId)).toEqual([
                 "A:1",
                 "B:1",
                 "A:2",
@@ -102,7 +102,7 @@ describe("ops/operation", () => {
                 operation("A:1", "A", { A: 1 }),
             ];
 
-            const sorted = sortOperations(ops);
+            const sorted = sortOperationsCausally(ops);
 
             expect(sorted.map((op) => op.operationId)).toEqual(["A:1", "B:1"]);
             expect(ops.map((op) => op.operationId)).toEqual(["B:1", "A:1"]);
