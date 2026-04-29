@@ -7,3 +7,4 @@ dist/
 # Optional local playground artifacts
 .playground-cache/
 .idea
+docs/

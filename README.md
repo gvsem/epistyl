@@ -19,7 +19,9 @@ It is designed for systems where objects are edited independently on multiple re
 - replica merge support
 - JSON-like materialized views
 - transaction-aware operation history
+- optional YAML-driven code generation for typed object wrappers
 
+See [CODEGEN.md](./CODEGEN.md) for the generator workflow. The rest of this README focuses on the CRDT runtime architecture.
 
 ## Core Model
 

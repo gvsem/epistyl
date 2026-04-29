@@ -1,0 +1,65 @@
+name: CalendarEvent
+
+root:
+  type: object
+  fields:
+    title:
+      type: primitive
+      valueType: string
+      semantics: mv
+
+    description:
+      type: primitive
+      valueType: string
+      semantics: lww
+
+    startAt:
+      type: primitive
+      valueType: string
+      semantics: lww
+
+    endAt:
+      type: primitive
+      valueType: string
+      semantics: lww
+
+    organizer:
+      type: ref
+      semantics: lww
+
+    location:
+      type: object
+      fields:
+        room:
+          type: primitive
+          valueType: string
+          semantics: lww
+        building:
+          type: primitive
+          valueType: string
+          semantics: lww
+
+    tags:
+      type: set
+      element:
+        type: primitive
+        valueType: string
+        semantics: lww
+
+    attendees:
+      type: array
+      element:
+        type: ref
+        semantics: lww
+
+    metadata:
+      type: object
+      fields:
+        color:
+          type: primitive
+          valueType: string
+          semantics: lww
+        note:
+          type: primitive
+          valueType: string
+          semantics: mv

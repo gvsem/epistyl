@@ -1,5 +1,12 @@
 export * from "./clock/clock";
 
+export * from "./codegen/errors";
+export * from "./codegen/emitter";
+export * from "./codegen/generate";
+export * from "./codegen/parser";
+export * from "./codegen/schema";
+export * from "./codegen/validator";
+
 export * from "./crdt/array";
 export * from "./crdt/object";
 export * from "./crdt/register";
