@@ -232,7 +232,7 @@ export function issueTransaction(
         objectId,
         {
             replicaId: replica.replicaId,
-            issueOperationMetadata() {
+            issueOperationData() {
                 const issued = tickClock(workingReplica.clockState);
 
                 workingReplica = {
@@ -241,8 +241,8 @@ export function issueTransaction(
                 };
 
                 return {
-                    opId: `${replica.replicaId}:${issued.state.counter}`,
-                    clock: issued.state.clock,
+                    operationId: `${replica.replicaId}:${issued.state.counter}`,
+                    clockSnapshot: issued.state.clock,
                 };
             }
         }

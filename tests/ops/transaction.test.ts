@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createReplicaClockState, tickClock, type ReplicaClockState } from "../../src/clock/clock";
 import {
     createTransactionBuilder,
-    type IssuedOperationMetadata,
+    type IssuedOperationData,
     type TransactionBuildContext,
 } from "../../src/ops/transaction";
 import {Operation} from "../../src/ops/operation";
@@ -17,13 +17,13 @@ function createBuildContext(replicaId = "A"): {
     return {
         context: {
             replicaId,
-            issueOperationMetadata(): IssuedOperationMetadata {
+            issueOperationData(): IssuedOperationData {
                 const issued = tickClock(state);
                 state = issued.state;
 
                 return {
-                    opId: `${replicaId}:${issued.state.counter}`,
-                    clock: issued.state.clock,
+                    operationId: `${replicaId}:${issued.state.counter}`,
+                    clockSnapshot: issued.state.clock,
                 };
             },
         },
@@ -34,7 +34,7 @@ function createBuildContext(replicaId = "A"): {
 }
 
 describe("ops/transaction", () => {
-    it("creates empty transaction record", () => {
+    it("creates empty transaction data", () => {
         const { context } = createBuildContext("A");
 
         const tx = createTransactionBuilder(
@@ -49,16 +49,14 @@ describe("ops/transaction", () => {
 
         expect(tx.getOperations()).toEqual([]);
         expect(tx.toData()).toEqual({
-            txId: "A:tx:1",
+            transactionId: "A:tx:1",
             objectId: "event-1",
             replicaId: "A",
             operations: [],
-            label: undefined,
-            timestamp: undefined,
         });
     });
 
-    it("stores transaction options in record", () => {
+    it("stores transaction identifiers in data", () => {
         const { context } = createBuildContext("A");
 
         const tx = createTransactionBuilder(
@@ -68,7 +66,7 @@ describe("ops/transaction", () => {
         );
 
         expect(tx.toData()).toEqual({
-            txId: "A:tx:1",
+            transactionId: "A:tx:1",
             objectId: "event-1",
             replicaId: "A",
             operations: [],

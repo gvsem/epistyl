@@ -187,7 +187,7 @@ describe("runtime/replica", () => {
             const replica = createReplicaState("A");
 
             const transaction: TransactionData = {
-                txId: "A:tx:1",
+                transactionId: "A:tx:1",
                 objectId: "event-1",
                 replicaId: "A",
                 operations: [

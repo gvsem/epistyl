@@ -7,7 +7,7 @@ export interface TransactionData {
     /**
      * Transaction identifier.
      */
-    txId: TransactionId;
+    transactionId: TransactionId;
 
     /**
      * Identifier of the root object affected by the transaction. Now transaction can affect just one object
@@ -25,9 +25,9 @@ export interface TransactionData {
     operations: Operation[];
 }
 
-export interface IssuedOperationMetadata {
-    opId: OperationId;
-    clock: VectorClock;
+export interface IssuedOperationData {
+    operationId: OperationId;
+    clockSnapshot: VectorClock;
 }
 
 export interface TransactionBuildContext {
@@ -37,10 +37,10 @@ export interface TransactionBuildContext {
     replicaId: ReplicaId;
 
     /**
-     * Issues metadata for the next operation in the transaction.
+     * Produces data for the next operation emitted within the transaction.
      * Returned clockSnapshot must be an immutable snapshot.
      */
-    issueOperationMetadata(): IssuedOperationMetadata;
+    issueOperationData(): IssuedOperationData;
 }
 
 export interface TransactionBuilder {
@@ -84,7 +84,7 @@ export interface TransactionBuilder {
     getOperations(): readonly Operation[];
 
     /**
-     * Finalizes the builder and returns a serializable transaction data.
+     * Finalizes the builder and returns the built transaction data object.
      */
     toData(): TransactionData;
 }
@@ -109,14 +109,14 @@ class DefaultTransactionBuilder implements TransactionBuilder {
     }
 
     private emit(action: Action): void {
-        const issued = this.context.issueOperationMetadata();
+        const issued = this.context.issueOperationData();
 
         const operation: Operation = {
-            operationId: issued.opId,
+            operationId: issued.operationId,
             transactionId: this.txId,
             objectId: this.objectId,
             replicaId: this.replicaId,
-            clockSnapshot: { ...issued.clock },
+            clockSnapshot: { ...issued.clockSnapshot },
             action,
         };
 
@@ -198,7 +198,7 @@ class DefaultTransactionBuilder implements TransactionBuilder {
 
     toData(): TransactionData {
         return {
-            txId: this.txId,
+            transactionId: this.txId,
             objectId: this.objectId,
             replicaId: this.replicaId,
             operations: [...this.operations],

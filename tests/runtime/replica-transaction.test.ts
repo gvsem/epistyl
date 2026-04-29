@@ -22,7 +22,7 @@ const applyContext: ApplyContext = {
 };
 
 describe("runtime/replica transactions", () => {
-    it("issueTransaction returns updated replica clockSnapshot state and transaction record", () => {
+    it("issueTransaction returns updated replica clockSnapshot state and transaction data", () => {
         const replica = createReplicaState("A");
 
         const issued = issueTransaction(
@@ -41,7 +41,7 @@ describe("runtime/replica transactions", () => {
         });
 
         expect(issued.transaction).toEqual({
-            txId: "A:tx:1",
+            transactionId: "A:tx:1",
             objectId: OBJECT_ID,
             replicaId: "A",
             operations: [

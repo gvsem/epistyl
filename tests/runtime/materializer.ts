@@ -100,7 +100,7 @@ describe("runtime/materializer", () => {
                 objectId: "event-1",
                 transactions: [
                     {
-                        txId: "A:tx:1",
+                        transactionId: "A:tx:1",
                         objectId: "event-1",
                         replicaId: "A",
                         operations: [
@@ -109,7 +109,7 @@ describe("runtime/materializer", () => {
                         ],
                     },
                     {
-                        txId: "B:tx:1",
+                        transactionId: "B:tx:1",
                         objectId: "event-1",
                         replicaId: "B",
                         operations: [
@@ -246,7 +246,7 @@ describe("runtime/materializer", () => {
                 objectId: "event-1",
                 transactions: [
                     {
-                        txId: "A:tx:1",
+                        transactionId: "A:tx:1",
                         objectId: "event-1",
                         replicaId: "A",
                         operations: [
@@ -264,7 +264,7 @@ describe("runtime/materializer", () => {
                         ],
                     },
                     {
-                        txId: "B:tx:1",
+                        transactionId: "B:tx:1",
                         objectId: "event-1",
                         replicaId: "B",
                         operations: [
@@ -308,7 +308,7 @@ describe("runtime/materializer", () => {
                 objectId: "event-1",
                 transactions: [
                     {
-                        txId: "A:tx:1",
+                        transactionId: "A:tx:1",
                         objectId: "event-1",
                         replicaId: "A",
                         operations: [
