@@ -1,6 +1,5 @@
 import {PartialOrderClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
-import type {OperationId} from "../ops/operation";
-import {compareCausalVersionStamps} from "./version";
+import {compareOperationTimestamps, type OperationId} from "../ops/operation";
 
 export type RegisterSemantics =
     | "lww"
@@ -41,7 +40,7 @@ export function createRegisterState<T>(
     };
 }
 
-export const compareRegisterVersionsForLww = compareCausalVersionStamps
+export const compareRegisterVersionsForLww = compareOperationTimestamps
 
 export function sortRegisterVersions<T>(
     versions: readonly RegisterVersion<T>[],

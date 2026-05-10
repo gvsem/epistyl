@@ -9,7 +9,7 @@ import {
     type ApplyMetadata,
     applyOperationToRoot,
     createRegisterVersionFromMetadata,
-    createVersionStampFromMetadata,
+    createOperationTimestampFromMetadata,
 } from "../../src/runtime/apply";
 
 import {
@@ -118,7 +118,7 @@ describe("runtime/apply", () => {
 
         it("createObjectSlotVersionFromMetadata copies metadata", () => {
             expect(
-                createVersionStampFromMetadata({
+                createOperationTimestampFromMetadata({
                     opId: "A:1",
                     replicaId: "A",
                     clock: {A: 1},
@@ -132,7 +132,7 @@ describe("runtime/apply", () => {
 
         it("createMapEntryVersionFromMetadata copies metadata", () => {
             expect(
-                createVersionStampFromMetadata({
+                createOperationTimestampFromMetadata({
                     opId: "A:1",
                     replicaId: "A",
                     clock: {A: 1},
@@ -146,7 +146,7 @@ describe("runtime/apply", () => {
 
         it("createArrayElementVersionFromMetadata copies metadata", () => {
             expect(
-                createVersionStampFromMetadata({
+                createOperationTimestampFromMetadata({
                     opId: "A:1",
                     replicaId: "A",
                     clock: {A: 1},
@@ -219,7 +219,7 @@ describe("runtime/apply", () => {
             }
 
             const slot = getObjectField(next.state, "title");
-            expect(slot?.causalVersionStamp).toEqual({
+            expect(slot?.operationTimestamp).toEqual({
                 opId: "A:1",
                 replicaId: "A",
                 clock: {A: 1},
@@ -395,7 +395,7 @@ describe("runtime/apply", () => {
 
             expect(getObjectField(next.state, "title")).toEqual({
                 node: null,
-                causalVersionStamp: {
+                operationTimestamp: {
                     opId: "A:2",
                     replicaId: "A",
                     clock: {A: 2},
@@ -420,7 +420,7 @@ describe("runtime/apply", () => {
             }
 
             const slot = getObjectField(next.state, "location");
-            expect(slot?.causalVersionStamp?.opId).toBe("A:1");
+            expect(slot?.operationTimestamp?.opId).toBe("A:1");
             expect(isObjectNodeState(slot?.node as NodeState)).toBe(true);
         });
 

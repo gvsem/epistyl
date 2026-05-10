@@ -41,7 +41,7 @@ import {
     isSetNodeState,
     type NodeState,
 } from "../crdt/state";
-import {CausalVersionStamp} from "../crdt/version";
+import {OperationTimestamp} from "../ops/operation";
 import {assertStringPath, getChildFromContainer, splitParentPath} from "./pathHelpers";
 import {areLeafValuesEqual, createLeafNodeFromValue, isRefValue, LeafValue} from "./leafUtils";
 
@@ -120,7 +120,7 @@ export function applyActionToRoot(
 }
 
 /* ============================================================================
- * Value / version helpers
+ * Value / operation timestamp helpers
  * ========================================================================== */
 
 export function createRegisterVersionFromMetadata<T>(
@@ -135,7 +135,7 @@ export function createRegisterVersionFromMetadata<T>(
     };
 }
 
-export function createVersionStampFromMetadata(metadata: ApplyMetadata): CausalVersionStamp {
+export function createOperationTimestampFromMetadata(metadata: ApplyMetadata): OperationTimestamp {
     return {
         opId: metadata.opId,
         replicaId: metadata.replicaId,
@@ -179,7 +179,7 @@ function replaceObjectChildWithoutSlotRewriteVersion(
                     ...parent.state.items,
                     [field]: {
                         node: child,
-                        causalVersionStamp: null,
+                        operationTimestamp: null,
                     },
                 },
             },
@@ -291,12 +291,12 @@ function rewriteChildSlotOnContainer(
                     parent.state,
                     segment,
                     next,
-                    createVersionStampFromMetadata(metadata),
+                    createOperationTimestampFromMetadata(metadata),
                 )
                 : deleteObjectField(
                     parent.state,
                     segment,
-                    createVersionStampFromMetadata(metadata),
+                    createOperationTimestampFromMetadata(metadata),
                 ),
     };
 }
@@ -506,7 +506,7 @@ function applyArrayInsert(
             elementId: metadata.opId,
             afterElementId,
             node: initializedChild,
-            insertVersion: createVersionStampFromMetadata(metadata),
+            insertVersion: createOperationTimestampFromMetadata(metadata),
             deleteVersion: null,
         };
 
@@ -546,7 +546,7 @@ function applyArrayRemove(
             state: deleteArrayElement(
                 target.state,
                 elementId,
-                createVersionStampFromMetadata(metadata),
+                createOperationTimestampFromMetadata(metadata),
             ),
         };
     });
