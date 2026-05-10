@@ -1,4 +1,4 @@
-import {PartialOrderClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
+import {compareClocks, PartialOrderClockRelation, ReplicaId, type VectorClock,} from "../clock/clock";
 import {compareOperationTimestamps, type OperationId} from "../ops/operation";
 
 export type RegisterSemantics =
@@ -97,20 +97,11 @@ export function addRegisterVersion<T>(
 export function getLwwWinner<T>(
     state: RegisterState<T>,
 ): RegisterVersion<T> | null {
-    if (state.versions.length === 0) {
-        return null;
-    }
-
-    let winner = state.versions[0]
-
-    for (let i = 1; i < state.versions.length; i += 1) {
-        const candidate = state.versions[i]
-        if (compareRegisterVersionsForLww(candidate, winner) > 0) {
-            winner = candidate;
-        }
-    }
-
-    return winner;
+    return state.versions.reduce<RegisterVersion<T> | null>(
+        (winner, candidate) =>
+            winner === null || compareRegisterVersionsForLww(candidate, winner) > 0 ? candidate : winner,
+        null,
+    );
 }
 
 export function getMvValues<T>(
