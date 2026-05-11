@@ -9,6 +9,8 @@ export * from "./crdt/state";
 export * from "./ops/action";
 export * from "./ops/log";
 export * from "./ops/operation";
+export * from "./ops/operationLogFile";
+export * from "./ops/operationLogJson";
 export * from "./ops/transaction";
 
 export * from "./runtime/apply";
