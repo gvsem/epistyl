@@ -143,7 +143,7 @@ function emitObjectNodeInitialization(
             lines.push(
                 `${variableName}.state.items["${fieldName}"] = {`,
                 `    node: ${childVariableName},`,
-                `    causalVersionStamp: null,`,
+                `    operationTimestamp: null,`,
                 `};`,
             );
             continue;
@@ -160,7 +160,7 @@ function emitObjectNodeInitialization(
         lines.push(
             `${variableName}.state.items["${fieldName}"] = {`,
             `    node: ${nodeFactory},`,
-            `    causalVersionStamp: null,`,
+            `    operationTimestamp: null,`,
             `};`,
         );
     }
