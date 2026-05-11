@@ -1,0 +1,219 @@
+import type {Action, ObjectPath,} from "./action";
+import type {ObjectId, Operation, OperationId, TransactionId,} from "./operation";
+import type {ReplicaId, VectorClock} from "../clock/clock";
+import {LeafValue} from "../runtime/leafUtils";
+
+export interface TransactionData {
+    /**
+     * Transaction identifier.
+     */
+    transactionId: TransactionId;
+
+    /**
+     * Identifier of the root object affected by the transaction. Now transaction can affect just one object
+     */
+    objectId: ObjectId;
+
+    /**
+     * Origin replica identifier.
+     */
+    replicaId: ReplicaId;
+
+    /**
+     * Operations emitted by this transaction in local order.
+     */
+    operations: Operation[];
+}
+
+interface IssuedOperationData {
+    operationId: OperationId;
+    clockSnapshot: VectorClock;
+}
+
+interface TransactionBuilderContext {
+    /**
+     * Replica on behalf of which operations are issued.
+     */
+    replicaId: ReplicaId;
+
+    /**
+     * Produces data for the next operation emitted within the transaction.
+     * Returned clockSnapshot must be an immutable snapshot.
+     */
+    issueOperationData(): IssuedOperationData;
+}
+
+export interface TransactionBuilder {
+    /**
+     * Identifier of the transaction being built.
+     */
+    readonly txId: TransactionId;
+
+    /**
+     * Identifier of the target root object.
+     */
+    readonly objectId: ObjectId;
+
+    /**
+     * Identifier of the origin replica.
+     */
+    readonly replicaId: ReplicaId;
+
+    initObject(path: ObjectPath): void;
+
+    initSet(path: ObjectPath): void;
+
+    initArray(path: ObjectPath): void;
+
+    setField(path: ObjectPath, value: LeafValue): void;
+
+    deleteField(path: ObjectPath): void;
+
+    setAdd(path: ObjectPath, value: LeafValue): void;
+
+    setRemove(path: ObjectPath, value: LeafValue): void;
+
+    arrayInsert(path: ObjectPath, index: number, value: LeafValue): void;
+
+    arrayRemove(path: ObjectPath, index: number): void;
+
+    /**
+     * Returns the operations currently accumulated by the builder.
+     * The returned array must be treated as read-only snapshot data.
+     */
+    getOperations(): readonly Operation[];
+
+    /**
+     * Finalizes the builder and returns the built transaction data object.
+     */
+    toData(): TransactionData;
+}
+
+class DefaultTransactionBuilder implements TransactionBuilder {
+    public readonly txId: TransactionId;
+    public readonly objectId: ObjectId;
+    public readonly replicaId: ReplicaId;
+
+    private readonly operations: Operation[] = [];
+    private readonly context: TransactionBuilderContext;
+
+    constructor(
+        txId: TransactionId,
+        objectId: ObjectId,
+        context: TransactionBuilderContext,
+    ) {
+        this.txId = txId;
+        this.objectId = objectId;
+        this.replicaId = context.replicaId;
+        this.context = context;
+    }
+
+    private emit(action: Action): void {
+        const issued = this.context.issueOperationData();
+
+        const operation: Operation = {
+            operationId: issued.operationId,
+            transactionId: this.txId,
+            objectId: this.objectId,
+            replicaId: this.replicaId,
+            clockSnapshot: { ...issued.clockSnapshot },
+            action,
+        };
+
+        this.operations.push(operation);
+    }
+
+    initObject(path: ObjectPath): void {
+        this.emit({
+            type: "node.initObject",
+            path,
+        });
+    }
+
+    initSet(path: ObjectPath): void {
+        this.emit({
+            type: "node.initSet",
+            path,
+        });
+    }
+
+    initArray(path: ObjectPath): void {
+        this.emit({
+            type: "node.initArray",
+            path,
+        });
+    }
+
+    setField(path: ObjectPath, value: LeafValue): void {
+        this.emit({
+            type: "field.set",
+            path,
+            value,
+        });
+    }
+
+    deleteField(path: ObjectPath): void {
+        this.emit({
+            type: "field.delete",
+            path,
+        });
+    }
+
+    setAdd(path: ObjectPath, value: LeafValue): void {
+        this.emit({
+            type: "set.add",
+            path,
+            value,
+        });
+    }
+
+    setRemove(path: ObjectPath, value: LeafValue): void {
+        this.emit({
+            type: "set.remove",
+            path,
+            value,
+        });
+    }
+
+    arrayInsert(path: ObjectPath, index: number, value: LeafValue): void {
+        this.emit({
+            type: "array.insert",
+            path,
+            index,
+            value,
+        });
+    }
+
+    arrayRemove(path: ObjectPath, index: number): void {
+        this.emit({
+            type: "array.remove",
+            path,
+            index,
+        });
+    }
+
+    getOperations(): readonly Operation[] {
+        return [...this.operations];
+    }
+
+    toData(): TransactionData {
+        return {
+            transactionId: this.txId,
+            objectId: this.objectId,
+            replicaId: this.replicaId,
+            operations: [...this.operations],
+        };
+    }
+}
+
+export function createTransactionBuilder(
+    txId: TransactionId,
+    objectId: ObjectId,
+    context: TransactionBuilderContext,
+): TransactionBuilder {
+    return new DefaultTransactionBuilder(
+        txId,
+        objectId,
+        context,
+    );
+}
