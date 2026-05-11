@@ -1,14 +1,14 @@
 import {describe, expect, it} from "vitest";
 
 import {
-    createObjectState, createObjectVersion,
+    createObjectState, createObjectOperationTimestamp,
     deleteObjectField,
     getObjectField,
     hasObjectField,
     listObjectFields, ObjectEntryState,
-    type ObjectState, ObjectCausalVersionStamp,
+    type ObjectState, ObjectOperationTimestamp,
     setObjectField,
-} from "../../src/crdt/object";
+} from "../../src";
 
 type TestNode = {
     value: string;
@@ -17,7 +17,7 @@ function version(
     opId: string,
     replicaId: string,
     clock: Record<string, number>,
-): ObjectCausalVersionStamp {
+): ObjectOperationTimestamp {
     return {
         opId,
         replicaId,
@@ -27,11 +27,11 @@ function version(
 
 function fieldState(
     nodeValue: string | null,
-    version: ObjectCausalVersionStamp | null,
+    version: ObjectOperationTimestamp | null,
 ): ObjectEntryState<TestNode> {
     return {
         node: nodeValue === null ? null : {value: nodeValue},
-        causalVersionStamp: version,
+        operationTimestamp: version,
     };
 }
 
@@ -44,10 +44,10 @@ describe("crdt/object", () => {
         });
     });
 
-    describe("createKeyedVersion", () => {
+    describe("createObjectOperationTimestamp", () => {
         it("clones the clockSnapshot object", () => {
             const input = version("A:1", "A", {A: 1});
-            const created = createObjectVersion(input);
+            const created = createObjectOperationTimestamp(input);
 
             expect(created).toEqual(input);
             expect(created).not.toBe(input);
@@ -118,7 +118,7 @@ describe("crdt/object", () => {
                 items: {
                     title: {
                         node: {value: "Team Sync"},
-                        causalVersionStamp: version("A:1", "A", {A: 1}),
+                        operationTimestamp: version("A:1", "A", {A: 1}),
                     },
                 },
             });
@@ -142,7 +142,7 @@ describe("crdt/object", () => {
 
             expect(next.items.title).toEqual({
                 node: {value: "New"},
-                causalVersionStamp: version("A:2", "A", {A: 2}),
+                operationTimestamp: version("A:2", "A", {A: 2}),
             });
         });
     });
@@ -163,7 +163,7 @@ describe("crdt/object", () => {
 
             expect(next.items.title).toEqual({
                 node: null,
-                causalVersionStamp: version("A:2", "A", {A: 2}),
+                operationTimestamp: version("A:2", "A", {A: 2}),
             });
         });
 
@@ -178,7 +178,7 @@ describe("crdt/object", () => {
 
             expect(next.items.missing).toEqual({
                 node: null,
-                causalVersionStamp: version("A:1", "A", {A: 1}),
+                operationTimestamp: version("A:1", "A", {A: 1}),
             });
         });
     });

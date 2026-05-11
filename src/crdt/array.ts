@@ -1,16 +1,20 @@
-import {cloneCausalVersionStamp, compareCausalVersionStamps, CausalVersionStamp} from "./version";
+import {
+    cloneOperationTimestamp,
+    compareOperationTimestamps,
+    OperationTimestamp,
+} from "../ops/operation";
 
-export type ArrayElementCausalVersionStamp = CausalVersionStamp;
+export type ArrayElementOperationTimestamp = OperationTimestamp;
 
-export const createArrayElementCausalVersionStamp = cloneCausalVersionStamp;
-export const compareArrayElementCausalVersionStamps = compareCausalVersionStamps;
+export const createArrayElementOperationTimestamp = cloneOperationTimestamp;
+export const compareArrayElementOperationTimestamps = compareOperationTimestamps;
 
 export interface ArrayElementState<TNode> {
     elementId: string;
     afterElementId: string | null;
     node: TNode | null;
-    insertVersion: ArrayElementCausalVersionStamp;
-    deleteVersion: ArrayElementCausalVersionStamp | null;
+    insertVersion: ArrayElementOperationTimestamp;
+    deleteVersion: ArrayElementOperationTimestamp | null;
 }
 
 export interface ArrayState<TNode> {
@@ -54,7 +58,7 @@ export function mergeArrayElementStates<TNode>(
     }
 
     const insertWinner =
-        compareArrayElementCausalVersionStamps(left.insertVersion, right.insertVersion) >= 0
+        compareArrayElementOperationTimestamps(left.insertVersion, right.insertVersion) >= 0
             ? left
             : right;
 
@@ -66,24 +70,24 @@ export function mergeArrayElementStates<TNode>(
         mergedNode = left.node ?? right.node;
     }
 
-    let mergedDeleteVersion: ArrayElementCausalVersionStamp | null = null;
+    let mergedDeleteVersion: ArrayElementOperationTimestamp | null = null;
 
     if (left.deleteVersion !== null && right.deleteVersion !== null) {
         mergedDeleteVersion =
-            compareArrayElementCausalVersionStamps(left.deleteVersion, right.deleteVersion) >= 0
-                ? createArrayElementCausalVersionStamp(left.deleteVersion)
-                : createArrayElementCausalVersionStamp(right.deleteVersion);
+            compareArrayElementOperationTimestamps(left.deleteVersion, right.deleteVersion) >= 0
+                ? createArrayElementOperationTimestamp(left.deleteVersion)
+                : createArrayElementOperationTimestamp(right.deleteVersion);
     } else if (left.deleteVersion !== null) {
-        mergedDeleteVersion = createArrayElementCausalVersionStamp(left.deleteVersion);
+        mergedDeleteVersion = createArrayElementOperationTimestamp(left.deleteVersion);
     } else if (right.deleteVersion !== null) {
-        mergedDeleteVersion = createArrayElementCausalVersionStamp(right.deleteVersion);
+        mergedDeleteVersion = createArrayElementOperationTimestamp(right.deleteVersion);
     }
 
     return {
         elementId: insertWinner.elementId,
         afterElementId: insertWinner.afterElementId,
         node: mergedNode,
-        insertVersion: createArrayElementCausalVersionStamp(insertWinner.insertVersion),
+        insertVersion: createArrayElementOperationTimestamp(insertWinner.insertVersion),
         deleteVersion: mergedDeleteVersion,
     };
 }
@@ -111,20 +115,20 @@ export function insertArrayElement<TNode>(
 export function deleteArrayElement<TNode>(
     state: ArrayState<TNode>,
     elementId: string,
-    deleteVersion: ArrayElementCausalVersionStamp,
+    deleteVersion: ArrayElementOperationTimestamp,
 ): ArrayState<TNode> {
     const existing = state.elements[elementId];
     if (!existing) {
         return state;
     }
 
-    let nextDeleteVersion = createArrayElementCausalVersionStamp(deleteVersion);
+    let nextDeleteVersion = createArrayElementOperationTimestamp(deleteVersion);
 
     if (
         existing.deleteVersion !== null &&
-        compareArrayElementCausalVersionStamps(existing.deleteVersion, nextDeleteVersion) > 0
+        compareArrayElementOperationTimestamps(existing.deleteVersion, nextDeleteVersion) > 0
     ) {
-        nextDeleteVersion = createArrayElementCausalVersionStamp(existing.deleteVersion);
+        nextDeleteVersion = createArrayElementOperationTimestamp(existing.deleteVersion);
     }
 
     return {
@@ -158,7 +162,7 @@ function buildChildrenIndex<TNode>(
 
     for (const children of byParent.values()) {
         children.sort((a, b) =>
-            compareArrayElementCausalVersionStamps(a.insertVersion, b.insertVersion),
+            compareArrayElementOperationTimestamps(a.insertVersion, b.insertVersion),
         );
     }
 

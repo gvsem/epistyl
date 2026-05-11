@@ -1,8 +1,8 @@
-import {cloneCausalVersionStamp, type CausalVersionStamp} from "./version";
+import {cloneOperationTimestamp, type OperationTimestamp} from "../ops/operation";
 
-export type ObjectCausalVersionStamp = CausalVersionStamp;
+export type ObjectOperationTimestamp = OperationTimestamp;
 
-export const createObjectVersion = cloneCausalVersionStamp;
+export const createObjectOperationTimestamp = cloneOperationTimestamp;
 
 export interface ObjectEntryState<TNode> {
     /**
@@ -12,10 +12,10 @@ export interface ObjectEntryState<TNode> {
     node: TNode | null;
 
     /**
-     * Version of the binding itself.
+     * Operation timestamp of the binding itself.
      * Controls whether the key is considered present.
      */
-    causalVersionStamp: ObjectCausalVersionStamp | null;
+    operationTimestamp: ObjectOperationTimestamp | null;
 }
 
 export interface ObjectState<TNode> {
@@ -47,14 +47,14 @@ export function setObjectField<TNode>(
     state: ObjectState<TNode>,
     field: string,
     node: TNode,
-    causalVersionStamp: ObjectCausalVersionStamp,
+    operationTimestamp: ObjectOperationTimestamp,
 ): ObjectState<TNode> {
     return {
         items: {
             ...state.items,
             [field]: {
                 node,
-                causalVersionStamp: createObjectVersion(causalVersionStamp),
+                operationTimestamp: createObjectOperationTimestamp(operationTimestamp),
             },
         },
     };
@@ -63,14 +63,14 @@ export function setObjectField<TNode>(
 export function deleteObjectField<TNode>(
     state: ObjectState<TNode>,
     field: string,
-    causalVersionStamp: ObjectCausalVersionStamp,
+    operationTimestamp: ObjectOperationTimestamp,
 ): ObjectState<TNode> {
     return {
         items: {
             ...state.items,
             [field]: {
                 node: null,
-                causalVersionStamp: createObjectVersion(causalVersionStamp),
+                operationTimestamp: createObjectOperationTimestamp(operationTimestamp),
             },
         },
     };

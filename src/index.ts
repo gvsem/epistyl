@@ -12,7 +12,6 @@ export * from "./crdt/object";
 export * from "./crdt/register";
 export * from "./crdt/set";
 export * from "./crdt/state";
-export * from "./crdt/version";
 
 export * from "./ops/action";
 export * from "./ops/log";

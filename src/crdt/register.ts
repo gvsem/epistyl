@@ -1,6 +1,5 @@
-import {PartialOrderClockRelation, compareClocks, ReplicaId, type VectorClock,} from "../clock/clock";
-import type {OperationId} from "../ops/operation";
-import {compareCausalVersionStamps} from "./version";
+import {compareClocks, PartialOrderClockRelation, ReplicaId, type VectorClock,} from "../clock/clock";
+import {compareOperationTimestamps, type OperationId} from "../ops/operation";
 
 export type RegisterSemantics =
     | "lww"
@@ -41,7 +40,7 @@ export function createRegisterState<T>(
     };
 }
 
-export const compareRegisterVersionsForLww = compareCausalVersionStamps
+export const compareRegisterVersionsForLww = compareOperationTimestamps
 
 export function sortRegisterVersions<T>(
     versions: readonly RegisterVersion<T>[],
@@ -98,20 +97,11 @@ export function addRegisterVersion<T>(
 export function getLwwWinner<T>(
     state: RegisterState<T>,
 ): RegisterVersion<T> | null {
-    if (state.versions.length === 0) {
-        return null;
-    }
-
-    let winner = state.versions[0]
-
-    for (let i = 1; i < state.versions.length; i += 1) {
-        const candidate = state.versions[i]
-        if (compareRegisterVersionsForLww(candidate, winner) > 0) {
-            winner = candidate;
-        }
-    }
-
-    return winner;
+    return state.versions.reduce<RegisterVersion<T> | null>(
+        (winner, candidate) =>
+            winner === null || compareRegisterVersionsForLww(candidate, winner) > 0 ? candidate : winner,
+        null,
+    );
 }
 
 export function getMvValues<T>(
